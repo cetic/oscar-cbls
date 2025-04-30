@@ -25,6 +25,10 @@ object Swap {
   /** Creates a Swap that exchanges the values of two
     * [[oscar.cbls.core.computation.integer.IntVariable]].
     *
+    * @note
+    *   WARNING: This neighborhood does not check whether the provided variables have all the same
+    *   domain.
+    *
     * @param vars
     *   The variables defining the search space.
     * @param name
@@ -89,7 +93,11 @@ object Swap {
 }
 
 /** Neighborhood that find two [[oscar.cbls.core.computation.integer.IntVariable]] from an input
-  * value and swap their values
+  * value and swap their values.
+  *
+  * @note
+  *   WARNING: This neighborhood does not check whether the provided variables have all the same
+  *   domain.
   *
   * @param vars
   *   The variables defining the search space.

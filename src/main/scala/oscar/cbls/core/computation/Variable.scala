@@ -47,11 +47,17 @@ abstract class Variable(val model: Store, val isConstant: Boolean, name: Option[
     new DoublyLinkedList[(NotificationTargetType, Int)]()
 
   /** Limits the values of the variable to this domain. ONLY USED IN DEBUG MODE */
-  def setDomain(min: Long, max: Long): Unit = _domain = Some((min, max))
-  def domain: Option[(Long, Long)]          = _domain
+  def setDomain(min: Long, max: Long): Unit = {
+    require(min <= max, s"Invalid domain: $min > $max")
+    _domain = Some((min, max))
+  }
+  def domain: Option[(Long, Long)] = _domain
 
-  /** Save the state of this variable */
+  /** Saves the value of this variable. */
   def save(): SavedValue
+
+  /** Saves the state of this variable to be restored later. Act as a global checkpoint. */
+  def createGlobalCheckpoint(): SavedCheckpoint
 
   /** Sets the invariant as the structure defining the value of this variable.
     *
@@ -64,31 +70,35 @@ abstract class Variable(val model: Store, val isConstant: Boolean, name: Option[
     registerStaticallyListenedElement(invariant)
   }
 
-  /** Whether this variable is a decision variable. A decision variable is a variable that is
-    * not defined by any invariant.
+  /** Whether this variable is a decision variable. A decision variable is a variable that is not
+    * defined by any invariant.
     */
   def isADecisionVariable: Boolean = definingInvariant.isEmpty
 
-  /**
-    * Dynamically registers a listening element
+  /** Dynamically registers a listening element
     *
-    * @param target the element to register
-    * @param indexToRecallAtNotification the index that will be recalled at notification
-    * @return a [[KeyForRemoval]] structure that ease the removal of dynamically listening element
+    * @param target
+    *   the element to register
+    * @param indexToRecallAtNotification
+    *   the index that will be recalled at notification
+    * @return
+    *   a [[KeyForRemoval]] structure that ease the removal of dynamically listening element
     */
   protected[core] def doRegisterDynamicallyListeningElement(
     target: NotificationTargetType,
     indexToRecallAtNotification: Int = -1
   ): KeyForRemoval[(NotificationTargetType, Int)] = {
-    KeyForRemoval(dynamicallyListeningElements.insertStart((target,indexToRecallAtNotification)))
+    KeyForRemoval(dynamicallyListeningElements.insertStart((target, indexToRecallAtNotification)))
   }
 
-  /**
-    * Dynamically and statically registers a listening element
+  /** Dynamically and statically registers a listening element
     *
-    * @param target the element to register
-    * @param indexToRecallAtNotification the index that will be recalled at notification
-    * @return a [[KeyForRemoval]] structure that ease the removal of dynamically listening element
+    * @param target
+    *   the element to register
+    * @param indexToRecallAtNotification
+    *   the index that will be recalled at notification
+    * @return
+    *   a [[KeyForRemoval]] structure that ease the removal of dynamically listening element
     */
   protected[core] def doRegisterStaticallyAndDynamicallyListeningElement(
     propagationElement: Invariant with NotificationTargetType,

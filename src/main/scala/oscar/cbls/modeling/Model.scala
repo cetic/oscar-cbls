@@ -71,9 +71,10 @@ class Model(val name: String, debugLevel: Int = 0) {
     */
   def intVar(initialValue: Long, min: Long, max: Long, name: String = ""): IntVariable = {
     require(this.isOpen, "Cannot add variables once model is closed")
+    require(min <= max, s"Invalid domain: $min > $max")
     require(
       initialValue <= max && initialValue >= min,
-      "Initial value non consistent with given bounds"
+      s"Initial value $initialValue non consistent with given domain [$min, $max]"
     )
     val intVar =
       IntVariable(store, initialValue, isConstant = false, if (name == "") None else Some(name))
@@ -94,6 +95,7 @@ class Model(val name: String, debugLevel: Int = 0) {
     */
   def setVar(initialValue: Set[Int], min: Long, max: Long, name: String = ""): SetVariable = {
     require(this.isOpen, "Cannot add variables once model is closed")
+    require(min <= max, s"Invalid domain: $min > $max")
     require(
       initialValue.isEmpty || (initialValue.min >= min && initialValue.max <= max),
       "Initial value non consistent with given bounds"

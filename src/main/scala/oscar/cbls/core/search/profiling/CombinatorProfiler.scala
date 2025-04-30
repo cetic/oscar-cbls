@@ -14,13 +14,7 @@
 package oscar.cbls.core.search.profiling
 
 import oscar.cbls.core.search.NeighborhoodCombinator
-import oscar.cbls.core.search.profiling.profilingData.{
-  CombinatorProfilingData,
-  MinMeanMaxData,
-  NbOccurrencesPerIteration,
-  PositiveEventPercentage,
-  SummedValue
-}
+import oscar.cbls.core.search.profiling.profilingData._
 
 import scala.collection.mutable
 
@@ -175,7 +169,7 @@ class CombinatorProfiler(val combinator: NeighborhoodCombinator)
     */
   def collectCombinatorSpecificStatistics: List[List[List[String]]] = {
     List(
-      List(List(combinator.getClass.getSimpleName)),
+      List(List(combinator.name)),
       collectSpecificStatistic(
         minMeanMaxProfiledData.asInstanceOf[mutable.HashMap[String, CombinatorProfilingData]]
       ),

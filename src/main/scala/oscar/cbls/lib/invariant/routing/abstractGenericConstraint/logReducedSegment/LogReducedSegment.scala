@@ -13,20 +13,21 @@
 
 package oscar.cbls.lib.invariant.routing.abstractGenericConstraint.logReducedSegment
 
-import oscar.cbls.lib.invariant.routing.abstractGenericConstraint.segment._
-
 /** Abstract class for log reduced segments.
   *
-  * A LogReducedSegment is a [[Segment]] that has been split into several steps of length power of
-  * two. Each LogReducedSegment contains some precomputed value corresponding to each step composing
-  * it. Those value are used to compute global constraint over a route.
+  * A LogReducedSegment is a
+  * [[oscar.cbls.lib.invariant.routing.abstractGenericConstraint.segment.Segment]] that has been
+  * split into several steps of length power of two. Each LogReducedSegment contains some
+  * precomputed value corresponding to each step composing it. Those values are used to compute
+  * global constraint over a route.
   *
   * @tparam T
   *   The precomputed value. Each concrete GlobalConstraint should define its own.
   */
 sealed abstract class LogReducedSegment[T] {}
 
-/** A [[PrecomputedSubSequence]] that has been log reduced.
+/** A [[oscar.cbls.lib.invariant.routing.abstractGenericConstraint.segment.PrecomputedSubSequence]]
+  * that has been log reduced.
   *
   * @param startNode
   *   The start node of the PreComputedSubSequence.
@@ -44,7 +45,9 @@ case class LogReducedPreComputedSegment[T](startNode: Int, endNode: Int, steps: 
   }
 }
 
-/** A [[FlippedPreComputedSubSequence]] that has been log reduced.
+/** A
+  * [[oscar.cbls.lib.invariant.routing.abstractGenericConstraint.segment.FlippedPreComputedSubSequence]]
+  * that has been log reduced.
   *
   * @param startNode
   *   The start node of the FlippedPreComputedSubSequence.
@@ -63,7 +66,8 @@ case class LogReducedFlippedPreComputedSegment[T](startNode: Int, endNode: Int, 
   }
 }
 
-/** A [[NewNode]] that has been log reduced.
+/** A [[oscar.cbls.lib.invariant.routing.abstractGenericConstraint.segment.NewNode]] that has been
+  * log reduced.
   *
   * @param node
   *   The new node.

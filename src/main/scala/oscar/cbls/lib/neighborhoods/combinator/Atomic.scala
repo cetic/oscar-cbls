@@ -13,7 +13,8 @@
 
 package oscar.cbls.lib.neighborhoods.combinator
 
-import oscar.cbls.core.search.{Neighborhood, NeighborhoodCombinator}
+import oscar.cbls.core.computation.objective.Objective
+import oscar.cbls.core.search._
 
 /** Companion object of the [[Atomic]] class. */
 object Atomic {
@@ -21,11 +22,19 @@ object Atomic {
   /** Returns an Atomic neighborhood combinator that exhausts the input neighborhood and squashes
     * the performed moves into a single move.
     *
+    * @note
+    *   The atomic combinator is not designed to be used as a left neighborhood of a [[DynAndThen]]
+    *   combinator. However, you can achieve the same combined neighborhood by performing a search
+    *   with your right neighborhood after performing a search with your atomic neighborhood.<br> In
+    *   addition, if you set the `aggregateIntoSingleMove` to `true`, it is not compatible at all
+    *   with the DynAndThen.
+    *
     * @param n
     *   The neighborhood to squash into a single move.
     * @param aggregateIntoSingleMove
-    *   Whether the moves must be aggregated into a single one (see [[AggregatedAtomic]]) or not
-    *   (see [[NotAggregatedAtomic]]). By default, set to `false`.
+    *   Whether the moves must be aggregated into a single one or not. If not, the returned
+    *   neighborhood is a [[EjectionChains]] that uses only the input neighborhood. By default, set
+    *   to `false`.
     * @param shouldStop
     *   Given the number of performed moves, determines whether we should continue searching for new
     *   moves.
@@ -37,9 +46,18 @@ object Atomic {
     aggregateIntoSingleMove: Boolean = false,
     shouldStop: Int => Boolean = _ => false,
     neighborhoodCombinatorName: String = "Atomic"
-  ): Atomic = {
-    if (aggregateIntoSingleMove) new AggregatedAtomic(n, shouldStop, neighborhoodCombinatorName)
-    else new NotAggregatedAtomic(n, shouldStop, neighborhoodCombinatorName)
+  ): Neighborhood = {
+    if (aggregateIntoSingleMove) new Atomic(n, shouldStop, neighborhoodCombinatorName)
+    else {
+      val returnN: (Int, List[Move]) => Option[(Int, Neighborhood)] = (moveCount, _) => {
+        if (shouldStop(moveCount)) {
+          None
+        } else {
+          Some(moveCount + 1, n)
+        }
+      }
+      EjectionChains.fold(0)(returnN, name = neighborhoodCombinatorName)
+    }
   }
 }
 
@@ -58,6 +76,12 @@ object Atomic {
   * `4 -> 3 -> 5 -> 2 -> 1 -> 9 -> 6 -> 8 -> 7` into `0 -> 2 -> 3 -> 4 -> 5 -> 1 -> 9 -> 8 -> 7 ->`
   * `6`".
   *
+  * This implementation aggregates all the move performed by the input neighborhood into one using
+  * [[LoadSolutionMove]].
+  *
+  * @note
+  *   The use of [[LoadSolutionMove]] makes this combinator incompatible with the [[DynAndThen]]
+  *
   * @param n
   *   The neighborhood to squash into a single move.
   * @param shouldStop
@@ -66,8 +90,27 @@ object Atomic {
   * @param neighborhoodCombinatorName
   *   The name of the neighborhood combinator.
   */
-abstract class Atomic(
-  n: Neighborhood,
-  shouldStop: Int => Boolean,
-  neighborhoodCombinatorName: String
-) extends NeighborhoodCombinator(neighborhoodCombinatorName, List(n))
+class Atomic(n: Neighborhood, shouldStop: Int => Boolean, neighborhoodCombinatorName: String)
+    extends NeighborhoodCombinator(neighborhoodCombinatorName, List(n)) {
+
+  override protected[this] def exploreCombinator(objective: Objective): SearchResult = {
+    val objValue = objective.objValue
+
+    val startCheckpoint = objValue.model.createCheckpoint()
+    val startObjective  = objValue.value()
+
+    n.reset()
+    val nbMoves = n.doAllMoves(objective, shouldStop)
+    // doAllMoves sets objective at the same verbosity level that n
+    setObjectiveVerboseMode(objective, verbosityLevel)
+
+    if (nbMoves == 0)
+      NoMoveFound
+    else {
+      val endObjValue = objValue.pendingValue
+      val endSolution = objValue.model.extractSolution()
+      rollBackToGlobalCheckpoint(startCheckpoint, objective, startObjective)
+      MoveFound(LoadSolutionMove(endSolution, endObjValue, neighborhoodCombinatorName))
+    }
+  }
+}

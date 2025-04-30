@@ -36,12 +36,14 @@ case class CompositeMovesWithList(
   }
 
   override def toString: String = {
-    var toReturn: String = s"$neighborhoodName ${super.toString}\nComposes:\n"
-    for (m <- moves) toReturn += s"\t- ${m.toString.split("objValue after").head}\n"
+    var toReturn: String = s"$neighborhoodName \nComposes:\n"
+    toReturn += moves.map(_.toString.split("objValue after").head).mkString("\t-", "\t-", "")
+    toReturn += super.toString + "\n"
 
     toReturn
   }
 
   override def regularize(): Move =
-    CompositeMovesWithList(moves.map(_.regularize()), objValueAfter, neighborhoodName)
+    CompositeMovesWithList(moves.head.regularize() :: moves.tail, objValueAfter, neighborhoodName)
+
 }

@@ -14,19 +14,17 @@
 package oscar.cbls.core.computation.objective.composite
 
 import oscar.cbls.core.computation.objective.{Exploration, Objective}
-import oscar.cbls.core.search.profiling.NeighborhoodProfiler
 import oscar.cbls.core.search.Move
-import oscar.cbls.lib.neighborhoods.combinator.CompositeMove
+import oscar.cbls.core.search.profiling.NeighborhoodProfiler
 
 /** Objective dedicated to [[oscar.cbls.lib.neighborhoods.combinator.DynAndThen]]'s right
   * neighborhood.
   *
   * __How does it work ?__
   *   - Right Neighborhood uses this custom Objective to get its Exploration instance.
-  *   - Instead of checking a right move, we instantiate the move and use it with the left move to
-  *     instantiate a [[oscar.cbls.lib.neighborhoods.combinator.CompositeMove]].
-  *   - Using the base objective Exploration instance, we check the resulting CompositeMove and save
-  *     the [[oscar.cbls.core.search.SearchResult]]
+  *   - Knowing that a left move has been performed, it checks if performing a right move in
+  *     addition improve the base objective.
+  *   - The [[oscar.cbls.core.search.SearchResult]] is saved to construct a composite move.
   *
   * @param baseObj
   *   The Objective defined by the user used to guide the search.
@@ -38,7 +36,7 @@ import oscar.cbls.lib.neighborhoods.combinator.CompositeMove
   */
 private[objective] class CompositeRightStub(
   baseObj: Objective,
-  baseObjExplorer: Exploration[CompositeMove],
+  baseObjExplorer: Exploration[Move],
   leftMove: Move
 ) extends Objective(baseObj.objValue, baseObj.mustBeZero) {
 
@@ -51,15 +49,13 @@ private[objective] class CompositeRightStub(
       override def checkNeighbor(buildMove: Long => M): Unit = {
         val newValue  = objValue.value()
         val rightMove = buildMove(newValue)
-        val composite = CompositeMove(leftMove, rightMove, rightMove.objAfter(), "composite move")
-        baseObjExplorer.checkNeighbor(_ => composite)
+        baseObjExplorer.checkNeighbor(_ => rightMove)
         _toReturn = baseObjExplorer.toReturn
       }
     }
   }
 
   override def isValueNewBest(currentBest: Long, newValue: Long): Boolean = {
-    require(requirement = false, "isValueNewBest can not be called on an Objective stub")
-    false
+    baseObj.isValueNewBest(currentBest, newValue)
   }
 }

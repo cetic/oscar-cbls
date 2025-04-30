@@ -13,8 +13,10 @@
 
 package oscar.cbls.core.search
 
+import oscar.cbls.core.computation.GlobalCheckpoint
 import oscar.cbls.core.computation.objective.Objective
-import oscar.cbls.core.search.profiling.{CombinatorProfiler, SearchProfiler}
+import oscar.cbls.core.search.profiling.CombinatorProfiler
+import oscar.cbls.lib.neighborhoods.combinator.RollBackToGlobalCheckpointMove
 
 /** An interface that provides methods to create a NeighborhoodCombinator.
   *
@@ -61,5 +63,18 @@ abstract class NeighborhoodCombinator(
     for (n <- subNeighborhoods) n.reset()
   }
 
-  override def toString: String = this.getClass.getSimpleName
+  override def toString: String = name
+
+  /** Method used to roll back to a given global checkpoint */
+  protected def rollBackToGlobalCheckpoint(
+    globalCheckpoint: GlobalCheckpoint,
+    objective: Objective,
+    valueAtCheckpoint: Long
+  ): Unit = {
+    val actualVerbosity = this.verbosityLevel
+    setObjectiveVerboseMode(objective, 0)
+    commitMove(objective, RollBackToGlobalCheckpointMove(globalCheckpoint, valueAtCheckpoint))
+    setObjectiveVerboseMode(objective, actualVerbosity)
+  }
+
 }

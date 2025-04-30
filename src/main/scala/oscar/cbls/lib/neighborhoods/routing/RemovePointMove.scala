@@ -37,7 +37,8 @@ case class RemovePointMove(
 
   override def commit(): Unit = seq.remove(removedPointExplorer)
 
-  override def toString: String = s"RemovePointMove: remove node ${removedPointExplorer.value}. "
+  override def toString: String =
+    s"RemovePointMove: remove node ${removedPointExplorer.value}. " + super.toString
 
   override def regularize(): Move = {
     val reguRemovedPointExplorer =

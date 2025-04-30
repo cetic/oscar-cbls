@@ -1,5 +1,6 @@
 package oscar.cbls.modeling.search
 
+import oscar.cbls.core.computation.objective.Objective
 import oscar.cbls.core.search.{Move, Neighborhood}
 import oscar.cbls.lib.neighborhoods.combinator._
 import oscar.cbls.visual.OscaRDisplay
@@ -51,13 +52,18 @@ trait Combinator {
     * Atomic combinator explores the neighborhood and squash the result of all taken moves in a
     * single one.
     *
+    * @note
+    *   The atomic combinator is not designed to be used as a left neighborhood of a
+    *   [[oscar.cbls.lib.neighborhoods.combinator.DynAndThen]] combinator. However, you can achieve
+    *   the same combined neighborhood by performing a search with your right neighborhood after
+    *   performing a search with your atomic neighborhood.<br> In addition, if you set the
+    *   `aggregateIntoSingleMove` to `true`, it is not compatible at all with the DynAndThen.
     * @param n
     *   The neighborhood to squash into a single move.
     * @param aggregateIntoSingleMove
-    *   Whether the moves must be aggregated into a single one (see
-    *   [[oscar.cbls.lib.neighborhoods.combinator.AggregatedAtomic]]) or not (see
-    *   [[oscar.cbls.lib.neighborhoods.combinator.NotAggregatedAtomic]]). By default, set to
-    *   `false`.
+    *   Whether the moves must be aggregated into a single one or not. If not, the returned
+    *   neighborhood is a [[oscar.cbls.lib.neighborhoods.combinator.EjectionChains]] that uses only
+    *   the input neighborhood. By default, set to `false`.
     * @param shouldStop
     *   Given the number of performed moves, determines whether we should continue searching for new
     *   moves.
@@ -71,7 +77,7 @@ trait Combinator {
     aggregateIntoSingleMove: Boolean = false,
     shouldStop: Int => Boolean = _ => false,
     name: String = "Atomic"
-  ): Atomic = Atomic(n, aggregateIntoSingleMove, shouldStop, name)
+  ): Neighborhood = Atomic(n, aggregateIntoSingleMove, shouldStop, name)
 
   /** Constructs a [[oscar.cbls.lib.neighborhoods.combinator.Best]] combinator.
     *
@@ -299,6 +305,83 @@ trait Combinator {
       maxConsecutiveRestartWithoutImprovement,
       maxNumberOfRestartInTotal,
       restartFromBest,
+      name
+    )
+  }
+
+  /** Constructs an [[oscar.cbls.lib.neighborhoods.combinator.EjectionChains]] combinator.
+    *
+    * @note
+    *   The ejections chains are not designed to be used as a left neighborhood of a
+    *   [[oscar.cbls.lib.neighborhoods.combinator.DynAndThen]] combinator. However, you can achieve
+    *   the same combined neighborhood by putting you right neighborhood as the last neighborhood of
+    *   your ejection chain.
+    *
+    * @param nextNeighborhood
+    *   Function that, given previous committed moves, returns the next neighborhood to explore.
+    * @param relaxedObjective
+    *   A relaxed objective that can be used to ease the exploration of the sub-neighborhoods.
+    * @param relaxedAcceptanceCriterion
+    *   A function that, given the initial objective value and a new objective value, returns if the
+    *   move can be accepted.
+    * @param stopAtFirstImprovement
+    *   Whether the exploration can stop after the first improvement of the objective value.
+    * @param name
+    *   The name of the neighborhood combinator.
+    */
+  def ejectionChains(
+    nextNeighborhood: List[Move] => Option[Neighborhood],
+    relaxedObjective: Option[Objective] = None,
+    relaxedAcceptanceCriterion: Option[(Long, Long) => Boolean] = None,
+    stopAtFirstImprovement: Boolean = false,
+    name: String = "Ejection Chains"
+  ): EjectionChains[Unit] = {
+    EjectionChains(
+      nextNeighborhood,
+      relaxedObjective,
+      relaxedAcceptanceCriterion,
+      stopAtFirstImprovement,
+      name
+    )
+  }
+
+  /** Constructs a [[oscar.cbls.lib.neighborhoods.combinator.BackTrackedEjectionChains]] combinator.
+    *
+    * @note
+    *   The ejections chains are not designed to be used as a left neighborhood of a
+    *   [[oscar.cbls.lib.neighborhoods.combinator.DynAndThen]] combinator. However, you can achieve
+    *   the same combined neighborhood by putting you right neighborhood as the last neighborhood of
+    *   your ejection chain.
+    *
+    * @param firstNeighborhood
+    *   The neighborhood defining the first layer of the exploration.
+    * @param nextNeighborhood
+    *   Function that, given the move selected from the first layer, returns a function used by the
+    *   ejection chain to generate sub-neighborhood to explore.
+    * @param relaxedObjective
+    *   A relaxed objective that can be used to ease the exploration of the sub-neighborhoods.
+    * @param relaxedAcceptanceCriterion
+    *   A function that, given the initial objective value and a new objective value, returns if the
+    *   move can be accepted.
+    * @param stopAtFirstImprovement
+    *   Whether the exploration can stop after the first improvement of the objective value.
+    * @param name
+    *   The name of the neighborhood.
+    */
+  def backTrackedEjectionChains(
+    firstNeighborhood: Neighborhood,
+    nextNeighborhood: Move => List[Move] => Option[Neighborhood],
+    relaxedObjective: Option[Objective] = None,
+    relaxedAcceptanceCriterion: Option[(Long, Long) => Boolean] = None,
+    stopAtFirstImprovement: Boolean = false,
+    name: String = "Ejection Chains"
+  ): Neighborhood = {
+    BackTrackedEjectionChains(
+      firstNeighborhood,
+      nextNeighborhood,
+      relaxedObjective,
+      relaxedAcceptanceCriterion,
+      stopAtFirstImprovement,
       name
     )
   }
