@@ -21,10 +21,14 @@ import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.invariant.numeric.IntInt2Int
 import oscar.cbls.lib.neighborhoods.Assign
 import oscar.cbls.test.lib.neighborhoods.ToolsForTestingNeighborhood.generateRandomDomain
+import oscar.cbls._
+import oscar.cbls.modeling.{Neighborhoods => Nrs}
 
 import scala.util.Random
+import org.scalatest.matchers.must.Matchers
+import oscar.cbls.core.search.NoMoveFound
 
-class AssignTestSuite extends AnyFunSuite {
+class AssignTestSuite extends AnyFunSuite with Matchers {
 
   private def getTestBasicModel
     : (Array[IntVariable], (IntVariable, Int) => Iterable[Long], Minimize) = {
@@ -52,6 +56,17 @@ class AssignTestSuite extends AnyFunSuite {
     }
 
     (Array(a, b), (v: IntVariable, _: Int) => domain(v), objective)
+  }
+
+  test("Assign cannot assign same value") {
+    implicit val m : Model = model("Test assign")
+    val a = intVar(10,0,20)
+    val obj = m.minimize(a)
+    m.close()
+
+    val assign = Nrs.assign(Array(a),
+      varsDomain = (_,_) => Array(10))
+    Nrs.combinator.acceptAll(assign).getMove(obj) mustBe NoMoveFound
   }
 
   ignore("AssignNeighborhoods works as expected with First loop") {

@@ -14,19 +14,17 @@
 package oscar.cbls.test.lib.invariant.set
 
 import org.scalatest.funsuite.AnyFunSuite
-import oscar.cbls.core.computation.Store
-import oscar.cbls.core.computation.integer.IntVariable
-import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.set.Cardinality
-import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBench, TestBenchSut}
 
 class CardinalityTest extends AnyFunSuite {
 
   test("Cardinality invariant is correct") {
-    def createCardinality(model: Store): TestBenchSut = {
-      val input  = SetVariable(model, Set.empty)
-      val output = IntVariable(model, 0)
-      val inv    = Cardinality(model, input, output)
+    def createCardinality(model: Model): TestBenchSut = {
+      val input  = model.setVar(Set.empty, Int.MinValue, Int.MaxValue)
+      val output = model.intVar(0, 0, Int.MaxValue)
+      val inv    = Cardinality(model.store, input, output)
 
       TestBenchSut(inv, Array(input), Array(output))
     }

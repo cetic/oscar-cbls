@@ -7,7 +7,8 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.seq.SeqVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.seq.Content
-import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBench, TestBenchSut}
 
 import scala.collection.immutable.HashSet
 
@@ -15,10 +16,10 @@ class ContentTestSuite extends AnyFunSuite {
 
   test("Content keeps seq content using TestBench") {
 
-    val contentTestData = (model: Store) => {
-      val input  = SeqVariable(model, List.empty, "Seq")
-      val output = SetVariable(model, HashSet.empty[Int], name = Some("Content_of_Seq"))
-      val inv    = Content(model, input, output)
+    val contentTestData = (model: Model) => {
+      val input  = model.seqVar(Nil, Int.MinValue, Int.MaxValue, "Seq")
+      val output = model.setVar(Set.empty, Int.MinValue, Int.MaxValue, name = "Content_of_Seq")
+      val inv    = Content(model.store, input, output)
       TestBenchSut(inv, Array(input), Array(output))
     }
 

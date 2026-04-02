@@ -17,27 +17,17 @@ package oscar.cbls.core.search
 sealed abstract class SearchResult {}
 
 /** The result of an exploration where no valid move were found * */
-object NoMoveFound extends SearchResult
-
-/** Companion object of MoveFound */
-object MoveFound {
-  def apply(move: Move): MoveFound = {
-    new MoveFound(move)
-  }
-
-  def unapply(moveFound: MoveFound): Option[Move] = {
-    Some(moveFound.move)
-  }
-
-}
+case object NoMoveFound extends SearchResult
 
 /** The result of an exploration were a valid move has been found * */
-class MoveFound(val move: Move) extends SearchResult {
+case class MoveFound(move: Move) extends SearchResult {
 
   /** Commits the validated move. */
   def commit(): Unit = {
     move.commit()
   }
-  def objAfter(): Long          = move.objAfter()
+
+  def objAfter(): Long = move.objValueAfter
+
   override def toString: String = s"Move found : $move"
 }

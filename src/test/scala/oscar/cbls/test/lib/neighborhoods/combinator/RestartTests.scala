@@ -13,6 +13,8 @@
 
 package oscar.cbls.test.lib.neighborhoods.combinator
 
+import oscar.cbls._
+import oscar.cbls.lib.neighborhoods.DoIt
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
@@ -28,6 +30,9 @@ import oscar.cbls.modeling.routing.VRS
 import oscar.cbls.test.lib.neighborhoods.routing.NaiveSumDistancesInvariant
 
 import scala.util.Random
+import oscar.cbls.lib.neighborhoods.Assign
+import oscar.cbls.lib.neighborhoods.combinator.LoadSolutionMove
+import oscar.cbls.lib.neighborhoods.AssignMove
 
 class RestartTests extends AnyFunSuite with Matchers {
 
@@ -100,6 +105,69 @@ class RestartTests extends AnyFunSuite with Matchers {
     )
 
   private val distMatrix: Array[Array[Long]] = generateManhattanDistMatrix(points)
+
+  test("The number of total restart is correct") {
+    implicit val m: Model = model("Restart tests")
+    val a                 = intVar(10, 0, 10)
+    var i                 = 0
+    val assign = Assign(
+      Array(a),
+      (v, _) => {
+        val domain =
+          if (i%2 == 0)
+            List()
+          else
+            List(v.value() - 1)
+        i += 1
+        domain
+      }
+    )
+    val obj = m.minimize(a)
+    val doItRestart = DoIt(m.store, () => a := a.value())
+    val restart     = Restart(assign, doItRestart, 3, 10)
+
+    m.close()
+
+    val moves = restart.getAllMoves(obj)
+    moves.length must be(20)
+
+  }
+
+
+
+  test("The number of consecutive restart is correct") {
+    implicit val m: Model = model("Restart tests")
+    val a                 = intVar(10, 0, 10)
+    var i                 = 0
+    val noMove            = List(1, 2, 4, 5, 6)
+    val assign = Assign(
+      Array(a),
+      (v, _) => {
+        val domain = // We deactivate the assign for the given indices
+          if (noMove.contains(i))
+            List()
+          else
+            List(v.value() - 1 max 0)
+        i += 1
+        domain
+      }
+    )
+    val obj = m.minimize(a)
+    val doItRestart = DoIt(m.store, () => a := a.value())
+    val restart     = Restart(assign, doItRestart, 2, 1000)
+
+    m.close()
+
+    val moves = restart.getAllMoves(obj)
+    moves.length must be(6)
+    assert(moves(0).isInstanceOf[AssignMove])
+    assert(moves(1).isInstanceOf[LoadSolutionMove])
+    assert(moves(2).isInstanceOf[LoadSolutionMove])
+    assert(moves(3).isInstanceOf[AssignMove])
+    assert(moves(4).isInstanceOf[LoadSolutionMove])
+    assert(moves(5).isInstanceOf[LoadSolutionMove])
+
+  }
 
   test("Restart works as Expected") {
     val model  = new Store()

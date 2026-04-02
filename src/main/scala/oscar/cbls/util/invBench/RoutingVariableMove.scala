@@ -11,7 +11,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.test.invBench
+package oscar.cbls.util.invBench
 
 import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.Variable
@@ -32,7 +32,7 @@ abstract class RoutingVariableMove(varId: Int) extends VariableMove(varId) {
     }
   }
 
-  /** Does the move (avoiding pattern matching for each concrete class) */
+  /** Does the move (avoiding pattern matching for each concrete class). */
   protected def mkSeqMove(seqVar: SeqVariable): Unit
 
   override def updateState(state: VariableState): VariableState = {
@@ -42,7 +42,7 @@ abstract class RoutingVariableMove(varId: Int) extends VariableMove(varId) {
     }
   }
 
-  /** Updates the State (avoiding pattern matching for each concrete class) */
+  /** Updates the State (avoiding pattern matching for each concrete class). */
   protected def updateSeqState(state: RoutingVariableState): RoutingVariableState
 
 }

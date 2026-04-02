@@ -15,6 +15,7 @@ package oscar.cbls.core.search
 
 import oscar.cbls.core.computation.GlobalCheckpoint
 import oscar.cbls.core.computation.objective.Objective
+import oscar.cbls.core.distributed.computation.SearchConnector
 import oscar.cbls.core.search.profiling.CombinatorProfiler
 import oscar.cbls.lib.neighborhoods.combinator.RollBackToGlobalCheckpointMove
 
@@ -63,7 +64,7 @@ abstract class NeighborhoodCombinator(
     for (n <- subNeighborhoods) n.reset()
   }
 
-  override def toString: String = name
+  override def toString: String = this.getClass.getSimpleName
 
   /** Method used to roll back to a given global checkpoint */
   protected def rollBackToGlobalCheckpoint(
@@ -77,4 +78,9 @@ abstract class NeighborhoodCombinator(
     setObjectiveVerboseMode(objective, actualVerbosity)
   }
 
+  override def declareRemotelyCallableTasks(storeAdapter: SearchConnector): Unit = {
+    for (neighborhood <- subNeighborhoods) {
+      neighborhood.declareRemotelyCallableTasks(storeAdapter)
+    }
+  }
 }

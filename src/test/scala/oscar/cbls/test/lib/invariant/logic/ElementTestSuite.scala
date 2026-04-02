@@ -18,7 +18,8 @@ import org.scalatest.matchers.should.Matchers
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.lib.invariant.logic.Element
-import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBench, TestBenchSut}
 
 class ElementTestSuite extends AnyFunSuite with Matchers {
 
@@ -28,7 +29,7 @@ class ElementTestSuite extends AnyFunSuite with Matchers {
     val input: Array[IntVariable] = values.map(x => IntVariable(store, x))
     val index: IntVariable        = IntVariable(store, 3)
     val output: IntVariable       = IntVariable(store, 0)
-    val inv: Element              = Element(store, input, index, output, bulkUsed = false)
+    val inv: Element              = Element(store, input, index, output)
     store.close()
 
     (store, input, index, output, inv)
@@ -81,13 +82,12 @@ class ElementTestSuite extends AnyFunSuite with Matchers {
   }
 
   test("Element test bench") {
-    def createElement(model: Store): TestBenchSut = {
+    def createElement(model: Model): TestBenchSut = {
       val nbValues = 1000
-      val input    = Array.fill(nbValues)(IntVariable(model, 0))
-      val index    = IntVariable(model, 0)
-      index.setDomain(0, nbValues - 1)
-      val output = IntVariable(model, 0)
-      val inv    = Element(model, input, index, output, bulkUsed = false)
+      val input    = Array.fill(nbValues)(model.intVar(0, Long.MinValue, Long.MaxValue))
+      val index    = model.intVar(0, 0, nbValues - 1)
+      val output   = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val inv      = Element(model.store, input, index, output)
 
       TestBenchSut(inv, index +: input, Array(output))
     }

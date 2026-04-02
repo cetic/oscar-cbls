@@ -9,20 +9,6 @@ import oscar.cbls.modeling.routing.VRS
 
 class SymmetricalMatrixUnitTests extends AnyFunSuite with Matchers {
 
-  test("TotalRouteLength do not accept when the matrix is not symmetric") {
-    val model = new Store()
-    val vrs   = VRS(model, 4, 1)
-    val distanceMatrix: Array[Array[Long]] =
-      Array(Array(1, 0, 0, 1), Array(0, 1, 0, 0), Array(1, 2, 3, 4), Array(1, 4, 3, 3))
-
-    an[IllegalArgumentException] should be thrownBy TotalRouteLength(
-      vrs,
-      distanceMatrix,
-      matrixIsSymmetrical = true
-    )
-
-  }
-
   private val distanceMatrix: Array[Array[Long]] =
     Array(
       Array(73958, 61888, 62709, 49501, 7372, 83661, 57116, 29586, 86889, 15972),

@@ -14,19 +14,18 @@
 package oscar.cbls.test.lib.invariant.set
 
 import org.scalatest.funsuite.AnyFunSuite
-import oscar.cbls.core.computation.Store
-import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.set.Diff
-import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBench, TestBenchSut}
 
 class DiffTest extends AnyFunSuite {
 
   test("Diff invariant is correct") {
-    def createDiff(model: Store): TestBenchSut = {
-      val A      = SetVariable(model, Set.empty)
-      val B      = SetVariable(model, Set.empty)
-      val output = SetVariable(model, Set.empty)
-      val inv    = Diff(model, A, B, output)
+    def createDiff(model: Model): TestBenchSut = {
+      val A      = model.setVar(Set.empty, Int.MinValue, Int.MaxValue)
+      val B      = model.setVar(Set.empty, Int.MinValue, Int.MaxValue)
+      val output = model.setVar(Set.empty, Int.MinValue, Int.MaxValue)
+      val inv    = Diff(model.store, A, B, output)
 
       TestBenchSut(inv, Array(A), Array(output))
 

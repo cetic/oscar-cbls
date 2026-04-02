@@ -20,7 +20,8 @@ import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.core.computation.{Store, Variable}
 import oscar.cbls.lib.invariant.logic.{Cluster, SparseCluster}
-import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
 import scala.collection.immutable.HashMap
 
@@ -31,7 +32,7 @@ class SparseClusterTestSuite extends AnyFunSuite with Matchers {
     val store                     = new Store(debugLevel = 3)
     val values: Array[Long]       = Array(1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5)
     val input: Array[IntVariable] = values.map(x => IntVariable(store, x))
-    val inv: SparseCluster = Cluster.makeSparse(store, input, Array(2L, 5L), bulkUsed = false)
+    val inv: SparseCluster        = Cluster.makeSparse(store, input, Array(2L, 5L))
     store.close()
 
     (store, input, inv(), inv)
@@ -123,12 +124,11 @@ class SparseClusterTestSuite extends AnyFunSuite with Matchers {
         } yield set.toArray
       }
 
-      override def createTestBenchSut(model: Store, inputData: Array[Long]): TestBenchSut = {
-        val nbValues                  = 1000
-        val input: Array[IntVariable] = Array.fill(nbValues)(IntVariable(model, 0))
-        input.foreach(v => v.setDomain(0, 100))
-        val inv    = Cluster.makeSparse(model, input, inputData, bulkUsed = false)
-        val output = inv()
+      override def createTestBenchSut(model: Model, inputData: Array[Long]): TestBenchSut = {
+        val nbValues                     = 1000
+        val input: Array[IntVariable]    = Array.fill(nbValues)(model.intVar(0, 0, 100))
+        val inv                          = Cluster.makeSparse(model.store, input, inputData)
+        val output                       = inv()
         val inputArray: Array[Variable]  = input.toArray
         val outputArray: Array[Variable] = output.values.toArray
 

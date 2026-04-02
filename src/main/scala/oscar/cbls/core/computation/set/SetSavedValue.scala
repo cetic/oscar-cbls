@@ -14,16 +14,38 @@
 package oscar.cbls.core.computation.set
 
 import oscar.cbls.core.computation.SavedValue
+import oscar.cbls.core.distributed.computation.{StoreIndependentSavedValue, StoreIndependentSetSavedValue}
 
 /** A saved state of a [[SetVariable]]
   *
   * @param setVariable
   *   The SetVariable whose state is saved
+  * @param savedValue
+  *   the saved value
   */
-class SetSavedValue(setVariable: SetVariable) extends SavedValue(setVariable) {
+case class SetSavedValue(setVariable: SetVariable, savedValue: Set[Int])
+    extends SavedValue(setVariable) {
 
-  val savedValue: Set[Int] = setVariable.value()
+  override def compare(that: SavedValue): Int = {
+    that match {
+      case s: SetSavedValue if s.setVariable == setVariable =>
+        if (s.savedValue.size != savedValue.size) {
+          s.savedValue.size - savedValue.size
+        } else {
+          val l1 = s.savedValue.toList.sorted
+          val l2 = savedValue.toList.sorted
+          for ((a, b) <- l1.zip(l2)) {
+            if (a != b) return a - b
+          }
+          0
+        }
+      case _ => throw new Error("cannot compare saved values from different variables")
+    }
+  }
 
   /** Restores the saved value to the variable */
   def restoreValue(): Unit = if (!setVariable.isConstant) setVariable := savedValue
+
+  override def makeStoreIndependent: StoreIndependentSavedValue =
+    StoreIndependentSetSavedValue(setVariable.id, savedValue.toArray)
 }

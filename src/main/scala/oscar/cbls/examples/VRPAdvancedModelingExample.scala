@@ -63,9 +63,15 @@ object VRPAdvancedModelingExample {
     // Defining the search procedure using combinators
     val search: Neighborhood = Nrs.combinator.bestSlopeFirst(List(n1, n2, n3, n4))
 
+    // Try population-based search
+//    val pbs = Nrs.combinator.populationBasedSearch((it, _) =>
+//      if (it < 10) Some((List(n1, n2, n3, n4), 4))
+//      else None
+//    )
+
     // Initialization of the problem resolution display
     val visu =
-      CartesianRoutingDisplay(obj.objValue, vrs, nodesCoordinate)
+      CartesianRoutingDisplay(obj.objValue, vrs, nodesCoordinate, width = 800, height = 800)
     // Defining a search procedure with visualization
     val searchWithVisu = Nrs.combinator.updateDisplay(search, visu)
 

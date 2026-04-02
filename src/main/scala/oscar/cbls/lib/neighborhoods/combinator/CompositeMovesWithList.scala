@@ -25,14 +25,13 @@ import oscar.cbls.core.search.Move
   *   The name of the [[oscar.cbls.core.search.Neighborhood]] that generated this Move.
   */
 case class CompositeMovesWithList(
-  moves: List[Move],
-  override val objValueAfter: Long,
-  override val neighborhoodName: String
+                                   moves: List[Move],
+                                   override val objValueAfter: Long,
+                                   override val neighborhoodName: String
 ) extends Move(objValueAfter, neighborhoodName) {
 
   override def commit(): Unit = {
-    moves.head.commit()
-    moves.tail.foreach(_.regularize().commit())
+    moves.foreach(_.commit())
   }
 
   override def toString: String = {
@@ -42,8 +41,4 @@ case class CompositeMovesWithList(
 
     toReturn
   }
-
-  override def regularize(): Move =
-    CompositeMovesWithList(moves.head.regularize() :: moves.tail, objValueAfter, neighborhoodName)
-
 }

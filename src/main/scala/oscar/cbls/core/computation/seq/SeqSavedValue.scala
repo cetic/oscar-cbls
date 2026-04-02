@@ -15,14 +15,25 @@ package oscar.cbls.core.computation.seq
 
 import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.SavedValue
+import oscar.cbls.core.distributed.computation.{StoreIndependentSavedValue, StoreIndependentSeqSavedValue}
 
 /** A saved state of a [[SeqVariable]].
   *
   * @param seqVariable
   *   The SeqVariable whose state is saved.
+  * @param savedValue
+  *   the saved value
   */
-case class SeqSavedValue(seqVariable: SeqVariable) extends SavedValue(seqVariable) {
-  val savedValue: IntSequence = seqVariable.value()
+case class SeqSavedValue(seqVariable: SeqVariable, savedValue: IntSequence)
+    extends SavedValue(seqVariable) {
+
+  override def compare(that: SavedValue): Int = {
+    that match {
+      case i: SeqSavedValue if this.seqVariable == i.seqVariable =>
+        savedValue compare i.savedValue
+      case _ => throw new Error("cannot compare saved values from different variables")
+    }
+  }
 
   /** Restores the variable current value to the saved one */
   override def restoreValue(): Unit = {
@@ -35,4 +46,7 @@ case class SeqSavedValue(seqVariable: SeqVariable) extends SavedValue(seqVariabl
       seqVariable.setValue(savedValue)
     }
   }
+
+  override def makeStoreIndependent: StoreIndependentSavedValue =
+    StoreIndependentSeqSavedValue(seqVariable.id, savedValue.toList.toArray)
 }

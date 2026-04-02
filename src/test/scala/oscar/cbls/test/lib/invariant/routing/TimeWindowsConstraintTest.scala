@@ -19,8 +19,9 @@ import org.scalatest.matchers.must.Matchers
 import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.Store
 import oscar.cbls.lib.invariant.routing.timeWindows.{TimeWindow, TimeWindowsConstraint}
+import oscar.cbls.modeling.Model
 import oscar.cbls.modeling.routing.VRS
-import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
+import oscar.cbls.util.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
 class TimeWindowsConstraintTest extends AnyFunSuite with Matchers {
 
@@ -158,11 +159,11 @@ class TimeWindowsConstraintTest extends AnyFunSuite with Matchers {
     }
 
     override def createTestBenchSut(
-      model: Store,
+      model: Model,
       inputData: (Array[Array[Long]], Array[TimeWindow])
     ): TestBenchSut = {
       val (timeMatrix, timeWindows) = inputData
-      val vrs                       = VRS(model, n, v)
+      val vrs                       = model.vrs(n, v)
       val inv = TimeWindowsConstraint.fromMatrix(
         vrs,
         timeMatrix,

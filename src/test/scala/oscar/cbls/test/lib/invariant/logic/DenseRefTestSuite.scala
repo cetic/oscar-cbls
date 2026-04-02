@@ -18,7 +18,8 @@ import org.scalatest.matchers.should.Matchers
 import oscar.cbls.core.computation.{Store, Variable}
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.logic.DenseRef
-import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBench, TestBenchSut}
 
 class DenseRefTestSuite extends AnyFunSuite with Matchers {
 
@@ -26,7 +27,7 @@ class DenseRefTestSuite extends AnyFunSuite with Matchers {
     val store                   = new Store(debugLevel = 3)
     val values: Array[Set[Int]] = Array(Set(0, 1, 2, 3), Set(2, 3), Set(0, 3), Set(1, 2, 3), Set(4))
     val input: Array[SetVariable] = values.map(s => SetVariable(store, s))
-    val inv: DenseRef             = DenseRef.makeDenseRef(store, input, 10, bulkUsed = false)
+    val inv: DenseRef             = DenseRef.makeDenseRef(store, input, 10)
     store.close()
 
     (store, input, inv(), inv)
@@ -107,12 +108,12 @@ class DenseRefTestSuite extends AnyFunSuite with Matchers {
   }
 
   test("DenseRef: test bench") {
-    def createDenseRef(model: Store): TestBenchSut = {
-      val nbValues                  = 1000
-      val upperBound                = 10
-      val input: Array[SetVariable] = Array.fill(nbValues)(SetVariable(model, Set.empty))
-      input.foreach(v => v.setDomain(0, upperBound - 1))
-      val inv = DenseRef.makeDenseRef(model, input, upperBound, bulkUsed = false)
+    def createDenseRef(model: Model): TestBenchSut = {
+      val nbValues   = 1000
+      val upperBound = 10
+      val input: Array[SetVariable] =
+        Array.fill(nbValues)(model.setVar(Set.empty, 0, upperBound - 1))
+      val inv                          = DenseRef.makeDenseRef(model.store, input, upperBound)
       val inputArray: Array[Variable]  = Array.from(input)
       val outputArray: Array[Variable] = Array.from(inv())
       TestBenchSut(inv, inputArray, outputArray)

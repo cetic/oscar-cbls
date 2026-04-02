@@ -9,7 +9,8 @@ import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.minmax.{Max, Min}
 import oscar.cbls.lib.invariant.numeric.Sum2
-import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
 import scala.util.Random
 
@@ -47,7 +48,7 @@ class ConstantsWithInvariantsTestSuite extends AnyFunSuite {
     val filterSet            = vars.indices.toSet
     val indices: SetVariable = SetVariable(store, filterSet)
     val out                  = IntVariable(store, 0)
-    val _                    = Min(store, vars, indices, out, bulkUsed = false)
+    val _                    = Min(store, vars, indices, out)
     store.close()
 
     out.value() should be(arr.min)
@@ -69,14 +70,17 @@ class ConstantsWithInvariantsTestSuite extends AnyFunSuite {
         extends InvTestBenchWithConstGen[Array[Long]]("Min test with constant and variables") {
       val nbValues = 100
 
-      override def createTestBenchSut(model: Store, inputData: Array[Long]): TestBenchSut = {
-        val inputArray = Array.tabulate(nbValues)(i =>
-          if (i < nbValues / 2) IntConstant(model, inputData(i)) else IntVariable(model, 0)
+      override def createTestBenchSut(model: Model, inputData: Array[Long]): TestBenchSut = {
+        val inputArray: Array[IntVariable] = Array.tabulate(nbValues)(i =>
+          if (i < nbValues / 2) {
+            model.intConst(inputData(i))
+          } else {
+            model.intConst(0)
+          }
         )
-        val listened = SetVariable(model, Set.empty[Int])
-        listened.setDomain(0, nbValues - 1)
-        val output = IntVariable(model, 0)
-        val max    = Max(model, inputArray, listened, output, bulkUsed = false)
+        val listened = model.setVar(Set.empty, 0, nbValues - 1)
+        val output   = model.intVar(0, Long.MinValue, Long.MaxValue)
+        val max      = Max(model.store, inputArray, listened, output)
         val input: Array[Variable] =
           (listened :: inputArray.filterNot(_.isInstanceOf[IntConstant]).toList).toArray
         TestBenchSut(max, input, Array(output))

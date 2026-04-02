@@ -19,8 +19,9 @@ import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.{Store, Variable}
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.lib.invariant.routing.abstractGenericConstraint.ForwardNaiveRoutingConstraint
+import oscar.cbls.modeling.Model
 import oscar.cbls.modeling.routing.VRS
-import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
+import oscar.cbls.util.invBench.{InvTestBench, TestBenchSut}
 
 class ForwardNaiveRoutingConstraintTest extends AnyFunSuite with Matchers {
 
@@ -90,8 +91,8 @@ class ForwardNaiveRoutingConstraintTest extends AnyFunSuite with Matchers {
     val n = 25
     val v = 5
 
-    def createInv(model: Store): TestBenchSut = {
-      val vrs                     = VRS(model, n, v)
+    def createInv(model: Model): TestBenchSut = {
+      val vrs                     = model.vrs(n, v)
       val inv                     = NaiveForwardNbEdges(vrs)
       val output: Array[Variable] = Array.from(inv())
       TestBenchSut(inv, Array(vrs.routes), output, Some(vrs))

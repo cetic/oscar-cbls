@@ -40,18 +40,17 @@ case class OnePointMoveMove(
 ) extends Move(objValueAfter, neighborhoodName) {
 
   override def commit(): Unit = {
-    seq.move(nodeToMoveExplorer, nodeToMoveExplorer, afterPointExplorer, flip = false)
+    if(seq.pendingValue sameIdentity afterPointExplorer.intSequence) {
+      seq.move(nodeToMoveExplorer, nodeToMoveExplorer, afterPointExplorer, flip = false)
+    }else{
+      val reguNodeToMoveExp = seq.pendingValue.explorerAtAnyOccurrence(nodeToMoveExplorer.value).get
+      val reguAfterPointExp = seq.pendingValue.explorerAtAnyOccurrence(afterPointExplorer.value).get
+      seq.move(reguNodeToMoveExp, reguNodeToMoveExp, reguAfterPointExp, flip = false)
+    }
   }
 
   override def toString: String = {
     s"OnePointMoveMove: Move node ${nodeToMoveExplorer.value} after " +
       s"node ${afterPointExplorer.value} in sequence\n$seq" + super.toString
-  }
-
-  override def regularize(): Move = {
-    val reguNodeToMoveExp = seq.pendingValue.explorerAtAnyOccurrence(nodeToMoveExplorer.value).get
-    val reguAfterPointExp = seq.pendingValue.explorerAtAnyOccurrence(afterPointExplorer.value).get
-
-    OnePointMoveMove(seq, reguNodeToMoveExp, reguAfterPointExp, objValueAfter, neighborhoodName)
   }
 }

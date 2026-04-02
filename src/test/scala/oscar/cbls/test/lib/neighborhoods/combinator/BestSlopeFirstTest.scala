@@ -20,7 +20,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.invariant.numeric.Abs
 import oscar.cbls.lib.neighborhoods.combinator.BestSlopeFirst
-import oscar.cbls.lib.neighborhoods.{AssignMove, Assign, SwapMove, Swap}
+import oscar.cbls.lib.neighborhoods.{Assign, AssignMove, Swap, SwapMove}
 
 class BestSlopeFirstTest extends AnyFunSuite with Matchers {
 
@@ -71,29 +71,29 @@ class BestSlopeFirstTest extends AnyFunSuite with Matchers {
 
     var moves = search.getAllMoves(obj)
     // The first 3 moves are a Swap
-    moves.head must be(SwapMove(a, b, 90, swap.name))
+    moves.head must be(SwapMove(a, 0, b, 1, 90, swap.name))
     moves = moves.tail
-    moves.head must be(SwapMove(b, d, 70, swap.name))
+    moves.head must be(SwapMove(b, 1, d, 3, 70, swap.name))
     moves = moves.tail
-    moves.head must be(SwapMove(c, d, 60, swap.name))
+    moves.head must be(SwapMove(c, 2, d, 3, 60, swap.name))
 
     // Swap is exhausted, the search tries Assign
     moves = moves.tail
-    moves.head must be(AssignMove(a, 60, 40, assign.name))
+    moves.head must be(AssignMove(a, 0, 70, 60, 40, assign.name))
     moves = moves.tail
-    moves.head must be(AssignMove(b, 55, 30, assign.name))
+    moves.head must be(AssignMove(b, 1, 20, 55, 30, assign.name))
     moves = moves.tail
-    moves.head must be(AssignMove(d, 65, 25, assign.name))
+    moves.head must be(AssignMove(d, 3, 50, 65, 25, assign.name))
     moves = moves.tail
-    moves.head must be(AssignMove(c, 65, 15, assign.name))
+    moves.head must be(AssignMove(c, 2, 40, 65, 15, assign.name))
 
     // Assign is exhausted but Swap is no more tabu
     moves = moves.tail
-    moves.head must be(SwapMove(a, b, 10, swap.name))
+    moves.head must be(SwapMove(a, 0, b, 1, 10, swap.name))
 
     // Swap is exhausted, but we can override the tabu of Assign
     moves = moves.tail
-    moves.head must be(AssignMove(a, 60, 5, assign.name))
+    moves.head must be(AssignMove(a, 0, 40, 60, 5, assign.name))
 
     // No more move
     moves.tail mustBe empty

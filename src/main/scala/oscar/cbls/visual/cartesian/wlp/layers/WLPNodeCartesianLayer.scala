@@ -81,7 +81,7 @@ object WLPNodeCartesianLayer {
   *   The SetVariable maintaining the open warehouses set.
   * @param pointData
   *   The buffer containing the data that will be displayed in the
-  *   [[scalafx.scene.control.ListView]].
+  *   [[https://javadoc.io/doc/org.scalafx/scalafx_2.12/22.0.0-R33/scalafx/scene/control/ListView.html scalafx.scene.control.ListView]].
   */
 class WLPNodeCartesianLayer(
   nbWarehouses: Int,

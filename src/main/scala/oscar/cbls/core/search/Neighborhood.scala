@@ -13,7 +13,11 @@
 
 package oscar.cbls.core.search
 
+import org.apache.pekko.actor.typed.ActorRef
 import oscar.cbls.core.computation.objective.Objective
+import oscar.cbls.core.distributed.computation.{SearchConnector, Task}
+import oscar.cbls.core.distributed.protocol.Command
+import oscar.cbls.core.distributed.search.RemotelyCallableTask
 import oscar.cbls.core.search.profiling.SearchProfiler
 import oscar.cbls.visual.profiling.ProfilingConsole
 
@@ -42,7 +46,7 @@ abstract class Neighborhood(_name: String) {
   private var _verbosityLevel: Int            = 0
   def verbosityLevel: Int                     = _verbosityLevel
 
-  /** Sets the new verbosity level and [[VerboseMode]] */
+  /** Sets the new verbosity level and [[oscar.cbls.core.search.VerboseMode]] */
   def verbosityLevel_=(verbosityLevel: Int): Unit = {
     _verbosityLevel = verbosityLevel
     _verboseMode = VerboseMode(verbosityLevel)
@@ -72,7 +76,8 @@ abstract class Neighborhood(_name: String) {
     * @param objective
     *   The Objective of the search (minimizing, maximizing...)
     * @return
-    *   [[MoveFound]] if a move has been found [[NoMoveFound]] otherwise.
+    *   [[oscar.cbls.core.search.MoveFound]] if a move has been found
+    *   [[oscar.cbls.core.search.NoMoveFound]] otherwise.
     */
   def getMove(objective: Objective): SearchResult
 
@@ -168,4 +173,12 @@ abstract class Neighborhood(_name: String) {
 
   /** Calls the commitMove method from the objective */
   def commitMove(objective: Objective, move: Move): Unit = objective.commitMove(move)
+
+  /** This method is where neighborhoods or combinators can declare remotely callable tasks
+    *
+    * @param storeAdapter
+    *   a class where the [[RemotelyCallableTask]] must be declared through the
+    *   [[declareRemotelyCallableTask]] method
+    */
+  def declareRemotelyCallableTasks(storeAdapter: SearchConnector): Unit = {}
 }

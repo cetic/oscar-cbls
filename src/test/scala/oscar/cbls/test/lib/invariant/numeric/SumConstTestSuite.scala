@@ -20,7 +20,8 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.numeric.SumConst
-import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
 class SumConstTestSuite extends AnyFunSuite with Matchers {
 
@@ -69,11 +70,10 @@ class SumConstTestSuite extends AnyFunSuite with Matchers {
         } yield array.toArray
       }
 
-      override def createTestBenchSut(model: Store, inputData: Array[Long]): TestBenchSut = {
-        val listened: SetVariable = SetVariable(model, Set.empty[Int])
-        listened.setDomain(0, inputData.length - 1)
-        val output: IntVariable = IntVariable(model, 0)
-        val inv: SumConst       = SumConst(model, inputData, listened, output)
+      override def createTestBenchSut(model: Model, inputData: Array[Long]): TestBenchSut = {
+        val listened: SetVariable = model.setVar(Set.empty, 0, inputData.length - 1)
+        val output: IntVariable   = model.intVar(0, Long.MinValue, Long.MaxValue)
+        val inv: SumConst         = SumConst(model.store, inputData, listened, output)
 
         TestBenchSut(inv, Array(listened), Array(output))
       }

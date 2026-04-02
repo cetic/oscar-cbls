@@ -19,7 +19,7 @@ class GlobalCheckpointTests extends AnyFunSuite {
     val store  = new Store(debugLevel = 3)
     val intVar = IntVariable(store, initInt)
     val setVar = SetVariable(store, initSet)
-    val seqVar = SeqVariable(store, List(0, 1, 2, 3, 4, 5))
+    val seqVar = SeqVariable(store, initSeq)
 
     store.close()
 
@@ -45,7 +45,7 @@ class GlobalCheckpointTests extends AnyFunSuite {
     val store  = new Store(debugLevel = 3)
     val intVar = IntVariable(store, initInt)
     val setVar = SetVariable(store, initSet)
-    val seqVar = SeqVariable(store, List(0, 1, 2, 3, 4, 5))
+    val seqVar = SeqVariable(store, initSeq)
 
     store.close()
 
@@ -85,6 +85,8 @@ class GlobalCheckpointTests extends AnyFunSuite {
   }
 
   private def doChanges(intVar: IntVariable, setVar: SetVariable, seqVar: SeqVariable): Unit = {
+    val intValue    = intVar.value()
+    val maxSetValue = setVar.value().max
     for (_ <- 0 until Random.between(1, 5)) {
       seqVar.defineCurrentValueAsCheckpoint()
       seqVar.insertAfterPosition(
@@ -96,8 +98,8 @@ class GlobalCheckpointTests extends AnyFunSuite {
         Random.nextInt(100),
         seqVar.value().explorerAtPosition(seqVar.pendingValue.size - 1).get
       )
-      intVar := Random.nextInt(100)
-      setVar := Set.fill(5)(Random.nextInt(100))
+      intVar := intValue + Random.nextInt(100)
+      setVar := Set.fill(5)(maxSetValue + Random.nextInt(100))
     }
   }
 }

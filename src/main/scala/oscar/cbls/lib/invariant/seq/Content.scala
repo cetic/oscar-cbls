@@ -47,7 +47,7 @@ object Content {
   *   The content of the input variable as a Set.
   */
 class Content(model: Store, input: SeqVariable, output: SetVariable)
-    extends Invariant(model, Some(s"Content maintainer of ${input.name()}"))
+    extends Invariant(model, Some(s"Content of ${input.name}"))
     with SeqNotificationTarget {
 
   input.registerStaticallyAndDynamicallyListeningElement(this)

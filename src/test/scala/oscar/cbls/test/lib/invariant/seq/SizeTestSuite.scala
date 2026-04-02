@@ -7,16 +7,17 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.seq.SeqVariable
 import oscar.cbls.lib.invariant.seq.Size
-import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBench, TestBenchSut}
 
 class SizeTestSuite extends AnyFunSuite {
 
   test("Size keeps seq size using TestBench") {
 
-    val sizeTestData = (model: Store) => {
-      val input  = SeqVariable(model, List.empty, "Seq")
-      val output = IntVariable(model, 0, name = Some("Size of Seq"))
-      val inv    = Size(model, input, output)
+    val sizeTestData = (model: Model) => {
+      val input  = model.seqVar(Nil, Int.MinValue, Int.MaxValue, "Seq")
+      val output = model.intVar(0, 0, Int.MaxValue, "Size of Seq")
+      val inv    = Size(model.store, input, output)
       TestBenchSut(inv, Array(input), Array(output))
     }
 

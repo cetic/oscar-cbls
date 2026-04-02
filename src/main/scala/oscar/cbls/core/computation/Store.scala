@@ -15,6 +15,8 @@ package oscar.cbls.core.computation
 
 import oscar.cbls.core.propagation._
 
+import scala.collection.immutable.HashMap
+
 /** Concrete implementation of a PropagationStructure.
   *
   * It allows to create/restore Solution based on decision variables.
@@ -33,14 +35,21 @@ import oscar.cbls.core.propagation._
   */
 class Store(debugLevel: Int = 0) extends PropagationStructure(debugLevel) {
 
-  private var variables: List[Variable]         = List.empty
-  private var decisionVariables: List[Variable] = List.empty
-  private var lastSolutionNb: Int               = -1
+  private var myVariables: Map[Int, Variable]         = HashMap.empty
+  private var myDecisionVariables: Map[Int, Variable] = HashMap.empty
 
-  private def nextSolutionNb: Int = {
-    lastSolutionNb += 1
-    lastSolutionNb
-  }
+  /** the defined variables. only call this after the close
+    * @return
+    */
+  def variables: Map[Int, Variable] = myVariables
+
+  /** The defined decision variables; ie the ones that are not controlled by any invariant. only
+    * call this after the close. It returns a map that maps unique ID to variables. Unique ID are
+    * unique and deterministic.
+    * @return
+    *   varID --> Variable
+    */
+  def decisionVariables: Map[Int, Variable] = myDecisionVariables
 
   /** Checks if `close()` method has been called. */
   def isClosed: Boolean = closed
@@ -60,10 +69,9 @@ class Store(debugLevel: Int = 0) extends PropagationStructure(debugLevel) {
   def extractSolution(additionalVariablesToSave: List[Variable] = List.empty): Solution = {
     require(closed, "Model must be closed before saving a new solution.")
     Solution(
-      decisionVariables.map(_.save()),
+      myDecisionVariables.values.map(variable => variable.save()),
       additionalVariablesToSave.map(_.save()),
-      this,
-      nextSolutionNb
+      this
     )
   }
 
@@ -81,7 +89,7 @@ class Store(debugLevel: Int = 0) extends PropagationStructure(debugLevel) {
     */
   def createCheckpoint(): GlobalCheckpoint = {
     require(closed, "Model must be closed before setting a new checkpoint.")
-    GlobalCheckpoint(decisionVariables.map(_.createGlobalCheckpoint()), this)
+    GlobalCheckpoint(myDecisionVariables.values.map(_.createGlobalCheckpoint()), this)
   }
 
   /** Closes the model.
@@ -94,12 +102,15 @@ class Store(debugLevel: Int = 0) extends PropagationStructure(debugLevel) {
     setupPropagationStructure()
     getPropagationElements.foreach {
       case v: Variable =>
-        variables = v :: variables
+        myVariables += v.id -> v
         if (v.isADecisionVariable)
-          decisionVariables = v :: decisionVariables
+          myDecisionVariables += v.id -> v
       case _ =>
     }
   }
 
   override def toString: String = "Store(vars:{" + variables.mkString(";") + "})"
+
+  // The method here below are devoted to distributed computation.
+
 }

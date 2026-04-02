@@ -1,19 +1,12 @@
 package oscar.cbls.test.algo.sequence
 
-import org.scalacheck.Shrink
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import org.scalatest.matchers.should.Matchers
 import oscar.cbls.algo.sequence._
 
-import java.util.concurrent.atomic.AtomicInteger
 import scala.util.Random
 
-class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
-  private val maxConsideredSize = 200
-
-  implicit def noShrink[T]: Shrink[T]   = Shrink.shrinkAny
-  private val genSeqSize: AtomicInteger = new AtomicInteger(0)
+class IntSequenceSuite extends AnyFunSuite with Matchers {
 
   test("RootIntSequenceExplorer behave as expected") {
 
@@ -27,6 +20,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
     intercept[NoSuchElementException](explorerAtStartRoot.value)
     explorerAtStartRoot.position should be(-1)
     explorerAtStartRoot.prev should be(explorerAtStartRoot)
+
     val explorerAtEndRoot: IntSequenceExplorer = explorer.exploreToPosition(referenceList.size).get
     explorerAtEndRoot.isInstanceOf[RootIntSequenceExplorer] should be(true)
     intercept[NoSuchElementException](explorerAtEndRoot.value)
@@ -42,6 +36,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
     fromStartToRoot.asInstanceOf[RootIntSequenceExplorer].beforeStart should be(true)
     val fromRootToStart = fromStartToRoot.next
     fromRootToStart.value should be(referenceList.head)
+
     // Forward
     val explorerAtEnd = explorer.exploreToPosition(referenceList.size - 1)
     explorerAtEnd.get.value should be(referenceList.last)
@@ -58,6 +53,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
     rootIteratorStartBackward.untilValue(4).isEmpty should be(true)
     rootIteratorStartBackward.until(_ => true).isEmpty should be(true)
     intercept[NoSuchElementException](rootIteratorStartBackward.toValue(4).next())
+
     // Iterator, endRoot in forward mode is an empty iterator and throw an error on next()
     val rootIteratorEndForward = explorerAtEndRoot.forward
     rootIteratorEndForward.toValue(4).isEmpty should be(true)
@@ -78,6 +74,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
     fullSeqIteratorStartRoot.map(_.position).toList should be(
       List(-1) ::: referenceList.indices.toList
     )
+
     // Iterator, endRoot in forward mode is an empty iterator and throw an error on next()
     val rootIteratorEndBackward = explorerAtEndRoot.backward
     rootIteratorEndBackward.toValue(4).isEmpty should be(false)
@@ -125,145 +122,6 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
 
   }
 
-  test("ConcreteIntSequence : batch queries keep expected list") {
-    forAll(
-      IntSequenceOperationsGenerator.testBenchGen(maxConsideredSize, genSeqSize),
-      minSuccessful(20)
-    ) { testBench =>
-      {
-        whenever(testBench._1.size >= 5) {
-          val actionsList   = testBench._2
-          val referenceList = testBench._1
-          var seq           = IntSequence(referenceList)
-          var modifiedList  = referenceList
-
-          for (action <- actionsList) {
-            val newValues = action.perform(seq, modifiedList, fast = false)
-            seq = newValues._1
-            modifiedList = newValues._2
-            seq.isInstanceOf[ConcreteIntSequence] should be(true)
-          }
-          SequenceTester.testIntSequence(seq, modifiedList)
-        }
-      }
-    }
-  }
-
-  test("MovedIntSequence : batch queries keep expected list") {
-    forAll(
-      IntSequenceOperationsGenerator.testBenchGen(maxConsideredSize, genSeqSize, onlyMove = true),
-      minSuccessful(20)
-    ) { testBench =>
-      {
-        whenever(testBench._1.size > 5) {
-          val actionsList   = testBench._2
-          val referenceList = testBench._1
-          // Creating a MovedIntSequence without changing the generated sequence
-          var seq = IntSequence(referenceList)
-          seq = new MovedIntSequence(
-            seq,
-            seq.explorerAtPosition(0).get,
-            seq.explorerAtPosition(0).get,
-            seq.explorerAtPosition(-1).get,
-            false,
-            1
-          )
-          var modifiedList = referenceList
-
-          for (action <- actionsList) {
-            val newValues = action.perform(seq, modifiedList)
-            seq = newValues._1
-            modifiedList = newValues._2
-          }
-          SequenceTester.testIntSequence(seq, modifiedList)
-          testExplorer(seq, modifiedList)
-        }
-      }
-    }
-  }
-
-  test("RemovedIntSequence : batch queries keep expected list") {
-    forAll(
-      IntSequenceOperationsGenerator.testBenchGen(maxConsideredSize, genSeqSize, onlyRemove = true),
-      minSuccessful(20)
-    ) { testBench =>
-      {
-        whenever(testBench._1.size > 5) {
-          val actionsList   = testBench._2
-          val referenceList = testBench._1
-          // Creating a RemovedIntSequence without changing the generated sequence
-          var seq = IntSequence(referenceList :+ 0)
-          seq = new RemovedIntSequence(seq, seq.explorerAtPosition(referenceList.size).get, 1)
-          var modifiedList = referenceList
-
-          for (action <- actionsList) {
-            val newValues = action.perform(seq, modifiedList)
-            seq = newValues._1
-            modifiedList = newValues._2
-          }
-          SequenceTester.testIntSequence(seq, modifiedList)
-          testExplorer(seq, modifiedList)
-
-        }
-      }
-    }
-  }
-
-  test("InsertedIntSequence : batch queries keep expected list") {
-    forAll(
-      IntSequenceOperationsGenerator.testBenchGen(maxConsideredSize, genSeqSize, onlyInsert = true),
-      minSuccessful(20)
-    ) { testBench =>
-      {
-        whenever(testBench._1.size > 5) {
-          val actionsList   = testBench._2
-          val referenceList = testBench._1
-
-          // Creating a InsertedIntSequence without changing the generated sequence
-          val value                   = referenceList.head
-          val referenceListMinusFirst = referenceList.drop(1)
-          var seq                     = IntSequence(referenceListMinusFirst)
-          seq = new InsertedIntSequence(seq, value, seq.explorerAtPosition(-1).get, 1)
-          var modifiedList = referenceList
-
-          for (action <- actionsList) {
-            val newValues = action.perform(seq, modifiedList)
-            seq = newValues._1
-            modifiedList = newValues._2
-          }
-          SequenceTester.testIntSequence(seq, modifiedList)
-          testExplorer(seq, modifiedList)
-
-        }
-      }
-    }
-  }
-
-  test("Mixed IntSequence types : batch queries keep expected list") {
-    forAll(
-      IntSequenceOperationsGenerator.testBenchGen(maxConsideredSize, genSeqSize),
-      minSuccessful(20)
-    ) { testBench =>
-      {
-        whenever(testBench._1.size > 5) {
-
-          val actionsList   = testBench._2
-          val referenceList = testBench._1
-          var seq           = IntSequence(referenceList)
-          var modifiedList  = referenceList
-
-          for (action <- actionsList) {
-            val newValues = action.perform(seq, modifiedList, fast = Random.nextBoolean())
-            seq = newValues._1
-            modifiedList = newValues._2
-          }
-          SequenceTester.testIntSequence(seq, modifiedList)
-          testExplorer(seq, modifiedList)
-        }
-      }
-    }
-  }
-
   test("Two IntSequences with same values but different Token does not share the same identity") {
     val intSequence1 = IntSequence(List(1, 2, 3, 4, 5, 6, 7, 8, 9, 0))
     val intSequence2 = IntSequence(List(1, 2, 3, 4, 5, 6, 7, 8, 9, 0))
@@ -272,32 +130,33 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
     intSequence1 equals intSequence2 should be(true)
   }
 
-  test("IntSequence's cache behaves as expected"){
+  test("IntSequence's cache behaves as expected") {
     val intSequence = IntSequence(List.from(0 until 20))
-    for(_ <- 0 until 1000){
-      val pos = Random.nextInt(20)
-      val method = Random.nextInt(3)
-      if(method == 2)
-        intSequence.positionOfAnyOccurrence(pos).get should be(pos)
-      else {
-        val explorer = method match {
-          case 0 => intSequence.explorerAtPosition(pos)
-          case 1 => intSequence.explorerAtAnyOccurrence(pos)
+    val seed        = Random.nextLong()
+    val rng         = new Random(seed)
+
+    withClue(s"With seed == $seed, ") {
+      for (_ <- 0 until 1000) {
+        val pos    = rng.nextInt(20)
+        val method = rng.nextInt(3)
+        if (method == 2)
+          intSequence.positionOfAnyOccurrence(pos).get should be(pos)
+        else {
+          val explorer = method match {
+            case 0 => intSequence.explorerAtPosition(pos)
+            case 1 => intSequence.explorerAtAnyOccurrence(pos)
+          }
+          explorer.get.value should be(pos)
+          explorer.get.position should be(pos)
         }
-        explorer.get.value should be(pos)
-        explorer.get.position should be(pos)
       }
     }
   }
 
-  private def testExplorer(seq: IntSequence, modifiedList: List[Int]): Unit = {
-    if (modifiedList.nonEmpty) {
-      seq.explorerAtPosition(-1).get.isInstanceOf[RootIntSequenceExplorer] should be(true)
-      seq.explorerAtPosition(-1).get.asInstanceOf[RootIntSequenceExplorer].beforeStart should be(
-        true
-      )
-      ExplorerTester.testExplorers(seq.explorerAtPosition(-1).get, modifiedList)
-    }
+  test("IntSequence test bench") {
+    val testBench = new IntSeqTestBench(30)
+
+    testBench.test()
   }
 
 }

@@ -25,11 +25,14 @@ import oscar.cbls.core.propagation._
   *   The propagation structure to which the element is attached
   * @param isConstant
   *   If the variable is a constant
-  * @param name
+  * @param givenNameOpt
   *   The (optional) name of the Variable.
   */
-abstract class Variable(val model: Store, val isConstant: Boolean, name: Option[String] = None)
-    extends PropagationElement(model) {
+abstract class Variable(
+  val model: Store,
+  val isConstant: Boolean,
+  private var givenNameOpt: Option[String] = None
+) extends PropagationElement(model) {
   require(model != null, "The propagation structure must be defined")
 
   /** The trait type that the [[Invariant]] must extends in order to receive notifications. This
@@ -37,7 +40,14 @@ abstract class Variable(val model: Store, val isConstant: Boolean, name: Option[
     */
   type NotificationTargetType
 
-  def name(): String = name.getOrElse(s"Variable_$id")
+  def name: String = givenNameOpt.getOrElse("Variable" + this.getClass.getSimpleName + id)
+
+  /** Sets the name of this variable.
+    *
+    * @param newName
+    *   the new name of this variable
+    */
+  def name_=(newName: String): Unit = givenNameOpt = Some(newName)
 
   private var _domain: Option[(Long, Long)]              = None
   private[core] var definingInvariant: Option[Invariant] = None
@@ -160,5 +170,5 @@ abstract class Variable(val model: Store, val isConstant: Boolean, name: Option[
     }
   }
 
-  override def toString: String = this.name()
+  override def toString: String = this.name
 }

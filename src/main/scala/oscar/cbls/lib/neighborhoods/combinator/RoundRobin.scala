@@ -75,6 +75,7 @@ class RoundRobin(
   override protected[this] def exploreCombinator(objective: Objective): SearchResult = {
     // While we have not cycle around whole set of failed robins
     selectNextRobin()
+// The full robin should be explored and fail in order for a single call to return NoMoveFound
     while (currentRobin != firstFailedRobinInRow) {
       robins(currentRobin)._1.getMove(objective) match {
         case NoMoveFound =>

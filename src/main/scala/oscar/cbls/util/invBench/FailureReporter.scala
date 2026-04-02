@@ -11,15 +11,20 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.test.invBench
+package oscar.cbls.util.invBench
 
 import org.scalacheck.Test
 import org.scalacheck.util.Pretty.{format, pretty, Params}
 
+/** Companion object of the [[FailureReporter]] class. */
 object FailureReporter {
+
+  /** Instantiates a new [[FailureReporter]]. */
   def apply(): FailureReporter = new FailureReporter()
 }
 
+/** Class responsible for throwing exceptions if some tests failed after trying all the seeds.
+  */
 class FailureReporter extends Test.TestCallback {
   private val prettyPrms = Params(1)
 

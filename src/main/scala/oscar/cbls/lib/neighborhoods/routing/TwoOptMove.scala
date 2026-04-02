@@ -38,16 +38,17 @@ case class TwoOptMove(
   override val neighborhoodName: String
 ) extends Move(objValueAfter, neighborhoodName) {
 
-  override def commit(): Unit = seq.flip(fromExplorer, toExplorer)
+  override def commit(): Unit = {
+    if (seq.pendingValue sameIdentity fromExplorer.intSequence) {
+      seq.flip(fromExplorer, toExplorer)
+    } else {
+      val reguFromExp = seq.pendingValue.explorerAtAnyOccurrence(fromExplorer.value).get
+      val reguToExp   = seq.pendingValue.explorerAtAnyOccurrence(toExplorer.value).get
+      seq.flip(reguFromExp, reguToExp)
+    }
+  }
 
   override def toString: String =
     s" $neighborhoodName flips segment ${fromExplorer.value} -> ... -> ${toExplorer.value} " +
       s"in sequence $seq" + super.toString
-
-  override def regularize(): Move = {
-    val reguFromExp = seq.pendingValue.explorerAtAnyOccurrence(fromExplorer.value).get
-    val reguToExp   = seq.pendingValue.explorerAtAnyOccurrence(toExplorer.value).get
-
-    TwoOptMove(seq, reguFromExp, reguToExp, objValueAfter, neighborhoodName)
-  }
 }

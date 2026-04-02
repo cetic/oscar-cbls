@@ -87,7 +87,26 @@ object IntSequence {
   * @param depth
   *   The current number of stacked updates
   */
-abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth: Int) {
+abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth: Int)
+    extends Ordered[IntSequence] {
+
+  override def compare(that: IntSequence): Int = {
+    if (this.token == that.token) 0
+    else {
+      if (this.size != that.size) {
+        this.size - that.size
+      } else {
+        val l1 = this.toList
+        val l2 = that.toList
+        for ((a, b) <- l1.zip(l2)) {
+          if (a != b) {
+            return a - b
+          }
+        }
+        0
+      }
+    }
+  }
 
   def size: Int
 

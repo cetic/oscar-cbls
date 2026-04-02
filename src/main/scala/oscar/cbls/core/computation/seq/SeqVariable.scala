@@ -43,11 +43,17 @@ object SeqVariable {
   def apply(
     model: Store,
     initialValue: List[Int],
-    name: String = "SeqVariable",
+    name: String = "",
     maxPivotPerValuePercent: Int = 4,
     isConstant: Boolean = false
   ): SeqVariable = {
-    new SeqVariable(model, initialValue, name, maxPivotPerValuePercent, isConstant)
+    new SeqVariable(
+      model,
+      initialValue,
+      if (name == "") None else Some(name),
+      maxPivotPerValuePercent,
+      isConstant
+    )
   }
 
   /** Creates an empty new SeqVariable with the given parameters.
@@ -67,7 +73,7 @@ object SeqVariable {
     */
   def empty(
     model: Store,
-    name: String = "SeqVariable",
+    name: Option[String] = None,
     maxPivotPerValuePercent: Int = 4,
     isConstant: Boolean = false
   ): Unit = {
@@ -115,10 +121,10 @@ object SeqVariable {
 class SeqVariable(
   model: Store,
   initialValue: List[Int],
-  name: String,
+  givenNameOpt: Option[String],
   maxPivotPerValuePercent: Int,
   isConstant: Boolean
-) extends Variable(model, isConstant) {
+) extends Variable(model, isConstant, givenNameOpt) {
   override type NotificationTargetType = SeqNotificationTarget
   require(model != null)
   setDomain(Int.MinValue, Int.MaxValue)
@@ -154,8 +160,6 @@ class SeqVariable(
       propagationElement,
       indexToRecallAtNotification
     )
-
-  override def name(): String = name
 
   /** Propagates up to this variable (if needed) and returns the new value of this SeqVariable.
     *
@@ -755,7 +759,7 @@ class SeqVariable(
     val clone = new SeqVariable(
       model,
       this.value().toList,
-      s"clone_of_$name",
+      Some(s"clone_of_$name"),
       maxPivotPerValuePercent,
       isConstant
     )
@@ -764,7 +768,7 @@ class SeqVariable(
   }
 
   /** Saves the state of this variable */
-  override def save(): SavedValue = SeqSavedValue(this)
+  override def save(): SavedValue = SeqSavedValue(this, this.value())
 
   /** Creates a SeqSavedCheckpoint. */
   override def createGlobalCheckpoint(): SavedCheckpoint = SeqSavedCheckpoint(this)

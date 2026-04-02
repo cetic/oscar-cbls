@@ -98,7 +98,10 @@ class WLPInterface(
   myWidth: Int,
   myHeight: Int
 ) extends OscaRPrimaryStage {
+  private final val WIDTH_INFO = 256d
+
   private lazy val pointData = ObservableBuffer[String]()
+
   private lazy val closestOpenedWarehouse: Array[List[Int] => Int] =
     Array.tabulate(nbDeliveries)(d => {
       def distanceBetween(a: (Long, Long), b: (Long, Long)): Double = {
@@ -112,6 +115,7 @@ class WLPInterface(
           .minBy(ow => distanceBetween(deliveryPosition.realCoordinates, nodesCoordinates(ow).realCoordinates))
       }
     })
+
   private val WLPDisplayShapes: List[CartesianLayer] =
     List(
       WLPLinkCartesianLayer(
@@ -137,7 +141,7 @@ class WLPInterface(
 
   // A ListView displaying information. In this case, those are related to selected component.
   private val infoList: ListView[String] = new ListView[String] {
-    maxWidth = 256
+    maxWidth = WIDTH_INFO
     maxHeight = myHeight
     items = pointData
   }
@@ -166,6 +170,7 @@ class WLPInterface(
     WLPDisplayShapes.foreach(_.initLayer())
     title = "WLP Drawing"
     scene = sceneWLP()
+    resizable = false
   }
 
   override protected[visual] def redraw(solution: Solution): Unit = {

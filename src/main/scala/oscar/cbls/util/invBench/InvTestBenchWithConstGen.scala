@@ -1,11 +1,22 @@
-package oscar.cbls.test.invBench
+// OscaR is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 2.1 of the License, or
+// (at your option) any later version.
+//
+// OscaR is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License  for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License along with OscaR.
+// If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-import oscar.cbls.core.computation.{Invariant, Variable}
+package oscar.cbls.util.invBench
+
 import org.scalacheck.commands.Commands
-import org.scalacheck.{Gen, Prop}
-import oscar.cbls.core.computation.Store
-import org.scalacheck.Properties
-import org.scalacheck.Test
+import org.scalacheck.{Gen, Prop, Properties, Test}
+import oscar.cbls.core.computation.{Invariant, Variable}
+import oscar.cbls.modeling.Model
 import oscar.cbls.modeling.routing.VRS
 
 /** @param inv
@@ -54,12 +65,12 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
 
   def genConst(): Gen[T]
 
-  def createTestBenchSut(model: Store, inputData: T): TestBenchSut
+  def createTestBenchSut(model: Model, inputData: T): TestBenchSut
 
   def typeTToString(elem: T): String = elem.toString
 
   /* A class to store the frequency for the command generation*/
-  case class PropagationMoveFrequency(propagationFreq: Int, moveFreq: Int)
+  private case class PropagationMoveFrequency(propagationFreq: Int, moveFreq: Int)
 
   private var propagationMoveFrequency: PropagationMoveFrequency = PropagationMoveFrequency(1, 5)
 
@@ -73,12 +84,13 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
     override def toString = s"TestState(${varStates.mkString(";")},${typeTToString(constState)})"
   }
 
-  class TestFailedException(msg: String) extends Exception(msg)
+  private class TestFailedException(msg: String) extends Exception(msg)
 
   type State = TestState
 
-  class TestBenchProperty(bench: InvTestBenchWithConstGen[T]) extends Properties(name) {
+  private class TestBenchProperty(bench: InvTestBenchWithConstGen[T], seeds: List[String] = List()) extends Properties(name) {
 
+    seeds.distinct.foreach(addSeed)
     propertyWithSeed("Random Seed", None) = bench.property()
 
     // Used to throw exception if some tests failed after trying all the seeds.
@@ -94,8 +106,7 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
 
   def test(): Unit = {
 
-    val prop = new TestBenchProperty(this)
-    additionalSeeds.distinct.foreach(prop.addSeed)
+    val prop = new TestBenchProperty(this, additionalSeeds)
     prop.check()
     if (prop.failureReporter.failedReports.nonEmpty) {
       val s = prop.failureReporter.failedReports.reverse.mkString("", "\n\n\n", "\n")
@@ -118,7 +129,7 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
   }
 
   override def genInitialState: Gen[State] = {
-    val model = new Store()
+    val model = Model()
     for {
       constData <- genConst()
       states <- {
@@ -133,10 +144,10 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
   override def initialPreCondition(state: State): Boolean = true
 
   override def newSut(state: State): Sut = {
-    val model = new Store(debugLevel = 3)
+    val model = Model(debugLevel = 3)
     val data  = createTestBenchSut(model, state.constState)
     model.close()
-    data.inv.model.propagate()
+    data.inv.store.propagate()
     data
   }
 
@@ -146,7 +157,7 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
     runningSuts: Iterable[Sut]
   ): Boolean = true
 
-  class InvariantCommand(m: VariableMove) extends UnitCommand {
+  private class InvariantCommand(m: VariableMove) extends UnitCommand {
 
     override def nextState(state: State): State = TestState(
       Array.tabulate(state.varStates.length)(i =>
@@ -165,17 +176,16 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
 
   }
 
-  class PropagationCommand extends UnitCommand {
+  private class PropagationCommand extends UnitCommand {
     override def nextState(state: State): State = state
 
     override def preCondition(state: State): Boolean = true
 
     override def postCondition(state: State, success: Boolean): Prop = success
 
-    override def run(sut: TestBenchSut): Unit = sut.inv.model.propagate()
+    override def run(sut: TestBenchSut): Unit = sut.inv.store.propagate()
 
     override def toString = "Propagation"
 
   }
-
 }

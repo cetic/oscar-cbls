@@ -19,7 +19,9 @@ import scalafx.scene.paint.Color
 import scalafx.scene.shape.Polygon
 import scalafx.scene.text.Text
 
-/** A polygon on a [[com.gluonhq.maps.MapLayer]] with all it's artefact.
+/** A polygon on a
+  * [[https://javadoc.io/doc/com.gluonhq/maps/latest/com.gluonhq.maps/com/gluonhq/maps/MapLayer.html com.gluonhq.maps.MapLayer]]
+  * with all it's artefact.
   *
   * @param polygon
   *   The Polygon object.

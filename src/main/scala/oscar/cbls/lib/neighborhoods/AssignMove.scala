@@ -14,6 +14,7 @@
 package oscar.cbls.lib.neighborhoods
 
 import oscar.cbls.core.computation.integer.IntVariable
+import oscar.cbls.core.distributed.computation.{SearchConnector, StoreIndependentMove}
 import oscar.cbls.core.search.Move
 
 /** Move that assign a [[scala.Long]] value to an
@@ -21,6 +22,10 @@ import oscar.cbls.core.search.Move
   *
   * @param variable
   *   The variable to change.
+  * @param index
+  *   The index of the variable in the array
+  * @param oldValue
+  *   The value of the variable before the move
   * @param newValue
   *   The value to assign to `variable`.
   * @param objValueAfter
@@ -30,6 +35,8 @@ import oscar.cbls.core.search.Move
   */
 case class AssignMove(
   variable: IntVariable,
+  index: Int,
+  oldValue: Long,
   newValue: Long,
   override val objValueAfter: Long,
   override val neighborhoodName: String
@@ -39,4 +46,34 @@ case class AssignMove(
 
   override def toString: String =
     s"AssignMove: $variable set to $newValue." + super.toString
+
+  override def detachFromStore(searchConnector: SearchConnector) =
+    StoreIndependentAssignMove(
+      variable = searchConnector.detachVariable(variable),
+      index = index,
+      oldValue = oldValue,
+      newValue = newValue,
+      objValueAfter = objValueAfter,
+      neighborhoodName = neighborhoodName
+    )
+}
+
+case class StoreIndependentAssignMove(
+  variable: Int,
+  index: Int,
+  oldValue: Long,
+  newValue: Long,
+  objValueAfter: Long,
+  neighborhoodName: String
+) extends StoreIndependentMove(objValueAfter) {
+  override def attachMoveToStore(searchConnector: SearchConnector): Move = {
+    AssignMove(
+      variable = searchConnector.attachIntVarToStore(variable),
+      index = index,
+      oldValue = oldValue,
+      newValue,
+      objValueAfter,
+      neighborhoodName
+    )
+  }
 }

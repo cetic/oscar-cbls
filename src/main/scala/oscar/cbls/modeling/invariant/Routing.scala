@@ -141,15 +141,17 @@ trait Routing {
     *
     * @param fun
     *   The function defining the mapping.
+    * @param isSymmetric
+    *   Whether the input function is symmetric. If `true`, it allows some speed-up for updates.
     * @param vrs
     *   The vehicle routing structure on which this invariant is computed.
     * @return
-    *   A RouteFlatMap invariant from which we can access to the fields:
+    *   A RouteFlatMap invariant from which we can access to the field:
     *   - `output`: the resulting [[SetVariable]] maintaining the result of the mapping.
-    *   - `numDuplicates`: the resulting [[IntVariable]] maintaining the sum of the mapped values
-    *     with an occurrence > 1.
     */
-  def routeFlatMap(fun: (Int, Int) => Set[Int])(implicit vrs: VRS): RouteFlatMap = {
+  def routeFlatMap(fun: (Int, Int) => Iterable[Int], isSymmetric: Boolean = true)(implicit
+    vrs: VRS
+  ): RouteFlatMap = {
     RouteFlatMap(vrs, fun)
   }
 
@@ -207,7 +209,7 @@ trait Routing {
     * @param timeFunction
     *   Function that gives the travel time between two nodes.
     * @param singleNodeTimeWindows
-    *   For each node, associates a [[TimeWindow]].
+    *   For each node, associates a [[oscar.cbls.lib.invariant.routing.timeWindows.TimeWindow]].
     * @param withLogReduction
     *   If true the log reduction algorithm will be activated.
     * @param withExtremesPC
@@ -247,7 +249,7 @@ trait Routing {
     * @param timeMatrix
     *   Matrix that gives the travel time between two nodes.
     * @param singleNodeTimeWindows
-    *   For each node, associates a [[TimeWindow]].
+    *   For each node, associates a [[oscar.cbls.lib.invariant.routing.timeWindows.TimeWindow]].
     * @param withLogReduction
     *   If true the log reduction algorithm will be activated.
     * @param withExtremesPC
@@ -276,5 +278,28 @@ trait Routing {
       name
     )
     twConstraint()
+  }
+
+  /** This method returns a derived variable expressing the number of violated precedences of all
+    * routes over the relevant vehicle routing structure.<br>
+    *
+    * Given a list of pairs `(L, R)`, the precedence constraint is violated if:
+    *   - `L` and `R` are routed but `L` is positioned after `R` ;
+    *   - Or, `L` and `R` are not on the same vehicle.
+    *   - Or, only one of these value is routed.
+    *
+    * Otherwise, the constraint is respected.
+    * @param precedences
+    *   An array of pairs describing the precedences.
+    * @param name
+    *   The (optional) name of the Invariant.
+    * @param vrs
+    *   The object that represents the Vehicle Routing Problem.
+    */
+  def nodePrecedence(precedences: Array[(Int, Int)], name: String = "")(implicit
+    vrs: VRS
+  ): IntVariable = {
+    val precedenceConstraint = NodePrecedence(vrs, precedences, name)
+    precedenceConstraint()
   }
 }

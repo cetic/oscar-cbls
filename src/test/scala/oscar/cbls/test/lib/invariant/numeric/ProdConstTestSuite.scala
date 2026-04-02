@@ -20,7 +20,8 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.numeric.ProdConst
-import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
 class ProdConstTestSuite extends AnyFunSuite with Matchers {
 
@@ -110,11 +111,10 @@ class ProdConstTestSuite extends AnyFunSuite with Matchers {
         } yield array.toArray // Values such that their product does not cause overflow
       }
 
-      override def createTestBenchSut(model: Store, inputData: Array[Long]): TestBenchSut = {
-        val listened: SetVariable = SetVariable(model, Set.empty[Int])
-        listened.setDomain(0, inputData.length - 1)
-        val output: IntVariable = IntVariable(model, 0)
-        val inv: ProdConst      = ProdConst(model, inputData, listened, output)
+      override def createTestBenchSut(model: Model, inputData: Array[Long]): TestBenchSut = {
+        val listened: SetVariable = model.setVar(Set.empty, 0, inputData.length - 1)
+        val output: IntVariable   = model.intVar(0, Long.MinValue, Long.MaxValue)
+        val inv: ProdConst        = ProdConst(model.store, inputData, listened, output)
 
         TestBenchSut(inv, Array(listened), Array(output))
       }

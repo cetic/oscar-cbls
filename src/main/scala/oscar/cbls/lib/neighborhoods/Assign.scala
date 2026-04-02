@@ -179,18 +179,22 @@ class Assign(
       while (domainIterator.hasNext) {
         val initVal: Long = currentVar.value()
         val newVal: Long  = domainIterator.next()
-        currentVar := newVal
-        searchProfiler().foreach(x => x.neighborSelected())
+        if (newVal != initVal) {
+          currentVar := newVal
+          searchProfiler().foreach(x => x.neighborSelected())
 
-        // Check if assigning newVal to currentVar improves the objective
-        exploration.checkNeighborWP(objValue => AssignMove(currentVar, newVal, objValue, this.name))
-        currentVar := initVal
+          // Check if assigning newVal to currentVar improves the objective
+          exploration.checkNeighborWP(objValue =>
+            AssignMove(currentVar, currentIndex, initVal, newVal, objValue, this.name)
+          )
+          currentVar := initVal
 
-        // The exploration found an improving move.
-        // The search can stop according the LoopBehavior
-        if (exploration.toReturn != NoMoveFound) {
-          stopIndices()
-          stopDomain()
+          // The exploration found an improving move.
+          // The search can stop according the LoopBehavior
+          if (exploration.toReturn != NoMoveFound) {
+            stopIndices()
+            stopDomain()
+          }
         }
       }
 

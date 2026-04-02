@@ -21,8 +21,8 @@ import oscar.cbls.lib.neighborhoods.combinator.LoadSolutionMove
 /** Companion object of the [[DoIt]] class. */
 object DoIt {
 
-  /** Returns a DoIt that ''always'' returns move that performs a given unit function
-    * when it is commited.
+  /** Returns a DoIt that ''always'' returns move that performs a given unit function when it is
+    * commited.
     *
     * @param model
     *   Model attached to the search.
@@ -31,7 +31,11 @@ object DoIt {
     * @param neighborhoodName
     *   The name of the Neighborhood.
     */
-  def apply(model: Store, doIt: () => Unit, neighborhoodName: String = "DoIt"): DoIt =
+  def apply(
+    model: Store,
+    doIt: () => Unit,
+    neighborhoodName: String = "DoIt"
+  ): DoIt =
     new DoIt(model, doIt, neighborhoodName)
 }
 
@@ -45,13 +49,11 @@ object DoIt {
   * @param neighborhoodName
   *   The name of the Neighborhood.
   */
-class DoIt(model: Store, doIt: () => Unit, neighborhoodName: String)
-    extends SimpleNeighborhood[LoadSolutionMove](neighborhoodName) {
-
-  override def getMove(objective: Objective): SearchResult = {
-    val accept = AcceptAll(objective.objValue) // A move must always be performed
-    super.getMove(accept)
-  }
+class DoIt(
+  model: Store,
+  doIt: () => Unit,
+  neighborhoodName: String
+) extends SimpleNeighborhood[LoadSolutionMove](neighborhoodName) {
 
   override protected def exploreNeighborhood(exploration: Exploration[LoadSolutionMove]): Unit = {
     val solution = model.extractSolution()

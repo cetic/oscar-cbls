@@ -19,8 +19,9 @@ import org.scalatest.matchers.must.Matchers
 import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.{Store, Variable}
 import oscar.cbls.lib.invariant.routing.RouteLength
+import oscar.cbls.modeling.Model
 import oscar.cbls.modeling.routing.VRS
-import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
+import oscar.cbls.util.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
 class RouteLengthTests extends AnyFunSuite with Matchers {
 
@@ -138,8 +139,8 @@ class RouteLengthTests extends AnyFunSuite with Matchers {
       } else matrixGen
     }
 
-    override def createTestBenchSut(model: Store, inputData: Array[Array[Long]]): TestBenchSut = {
-      val vrs                     = VRS(model, n, v)
+    override def createTestBenchSut(model: Model, inputData: Array[Array[Long]]): TestBenchSut = {
+      val vrs                     = model.vrs(n, v)
       val inv                     = RouteLength(vrs, inputData, triangular)
       val output: Array[Variable] = Array.from(inv())
       TestBenchSut(inv, Array(vrs.routes), output, Some(vrs))

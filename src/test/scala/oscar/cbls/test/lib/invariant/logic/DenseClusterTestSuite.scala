@@ -19,7 +19,8 @@ import oscar.cbls.core.computation.{Store, Variable}
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.logic.{Cluster, DenseCluster}
-import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBench, TestBenchSut}
 
 class DenseClusterTestSuite extends AnyFunSuite with Matchers {
 
@@ -27,7 +28,7 @@ class DenseClusterTestSuite extends AnyFunSuite with Matchers {
     val store                     = new Store(debugLevel = 3)
     val values: Array[Long]       = Array(4, 4, 4, 5, 4, 5, 5, 4)
     val input: Array[IntVariable] = values.map(x => IntVariable(store, x))
-    val inv: DenseCluster         = Cluster.makeDense(store, input, 10, bulkUsed = false)
+    val inv: DenseCluster         = Cluster.makeDense(store, input, 10)
     store.close()
 
     (store, input, inv(), inv)
@@ -113,12 +114,12 @@ class DenseClusterTestSuite extends AnyFunSuite with Matchers {
   }
 
   test("DenseCluster: test bench") {
-    def createDenseCluster(model: Store): TestBenchSut = {
-      val nbValues                  = 1000
-      val upperBound                = 10
-      val input: Array[IntVariable] = Array.fill(nbValues)(IntVariable(model, 0))
-      input.foreach(v => v.setDomain(0, upperBound - 1))
-      val inv = Cluster.makeDense(model, input, upperBound, bulkUsed = false)
+    def createDenseCluster(model: Model): TestBenchSut = {
+      val nbValues   = 1000
+      val upperBound = 10
+      val input: Array[IntVariable] =
+        Array.fill(nbValues)(model.intVar(0, 0, upperBound - 1))
+      val inv                          = Cluster.makeDense(model.store, input, upperBound)
       val inputArray: Array[Variable]  = input.toArray
       val outputArray: Array[Variable] = inv().toArray
       TestBenchSut(inv, inputArray, outputArray)

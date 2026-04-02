@@ -108,7 +108,7 @@ object RandomizeRoutes {
   *   [[oscar.cbls.core.computation.seq.SeqVariable.setValue]] method, which cannot be used if a
   *   checkpoint is defined. Be careful when this Neighborhood is used. This neighborhood is
   *   designed to works as the restart neighborhood of
-  *   [[oscar.cbls.lib.neighborhoods.metaheuristics.Restart]].
+  *   [[oscar.cbls.lib.neighborhoods.combinator.Restart]].
   *
   * @param vrs
   *   The vehicle routing structure on which the neighborhood operates.

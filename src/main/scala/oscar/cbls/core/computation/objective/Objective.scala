@@ -14,6 +14,7 @@
 package oscar.cbls.core.computation.objective
 
 import oscar.cbls.core.computation.integer.IntVariable
+import oscar.cbls.core.distributed.computation.{SearchConnector, StoreIndependentObjective}
 import oscar.cbls.core.search._
 import oscar.cbls.core.search.profiling.NeighborhoodProfiler
 
@@ -123,16 +124,50 @@ abstract class Objective(val objValue: IntVariable, val mustBeZero: List[IntVari
       s"Neighborhood did not restore the model after exploration. Got ${objValue
           .value()} should be ${currentObjValue()}"
     )
-    val newBestValue = isValueNewBest(bestObj, move.objAfter())
-    if (newBestValue) bestObj = move.objAfter()
+    val newBestValue = isValueNewBest(bestObj, move.objValueAfter)
+    if (newBestValue) bestObj = move.objValueAfter
+
     move.commit()
 
     if (objValue.value() == worstValue)
       println(
         s"Warning : objective value == $worstValue. You may have some violated strong constraint"
       )
-    require(objValue.value() == move.objAfter(), s"Neighborhood was lying ! : $move got $objValue")
+    require(
+      objValue.value() == move.objValueAfter,
+      s"Neighborhood was lying ! : $move got $objValue"
+    )
     _verboseMode.moveTaken(move, objValue.value(), currentObjValue(), bestObj, newBestValue)
-    _currentObjValue = move.objAfter()
+    _currentObjValue = move.objValueAfter
   }
+
+  /** Returns the name of the objective's variable */
+  def name: String = objValue.name
+
+  /** Sets the name of the objective's variable.
+    *
+    * @param newName
+    *   the new name of the objective variable
+    */
+  def name_=(newName: String): Unit = objValue.name = newName
+
+  /** Synchronize the current objective value with the value of the associated variable. Useful to
+    * manage the update of multiple objective.
+    *
+    * @note
+    *   No check are performed. This method must be used with caution.
+    */
+  def synchronizeObjectiveValue(): Unit = _currentObjValue = objValue.value()
+
+  /** Detaches the objective function from the [[oscar.cbls.core.computation.Store]] so it can be
+    * attached to another [[oscar.cbls.core.computation.Store]] A method that all Objective should
+    * implement so it can be used in a distributed search setting
+    * @param searchConnector
+    *   a [[SearchConnector]] featuring detach and attach method
+    * @return
+    *   a [[StoreIndependentObjective]] that can be attached to another store and will represent the
+    *   same thing
+    */
+  def detachFromStore(searchConnector: SearchConnector): StoreIndependentObjective = ???
+
 }

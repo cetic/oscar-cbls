@@ -14,14 +14,19 @@
 package oscar.cbls.lib.neighborhoods
 
 import oscar.cbls.core.computation.integer.IntVariable
+import oscar.cbls.core.distributed.computation.{SearchConnector, StoreIndependentMove}
 import oscar.cbls.core.search.Move
 
 /** Move that exchanges the values of two [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param first
   *   The first variable to swap.
+  * @param firstIndex
+  *   The index of the first variable in the array
   * @param second
   *   The second variable to swap.
+  * @param secondIndex
+  *   The index of the second variable in the array
   * @param objValueAfter
   *   The objective value of the neighbor. Used for comparison and validation.
   * @param neighborhoodName
@@ -29,10 +34,11 @@ import oscar.cbls.core.search.Move
   */
 case class SwapMove(
   first: IntVariable,
+  firstIndex: Int,
   second: IntVariable,
+  secondIndex: Int,
   override val objValueAfter: Long,
-  override val
-  neighborhoodName: String
+  override val neighborhoodName: String
 ) extends Move(objValueAfter, neighborhoodName) {
 
   override def commit(): Unit = {
@@ -41,4 +47,33 @@ case class SwapMove(
 
   override def toString: String =
     s"SwapMove: $first swapped with $second. " + super.toString
+
+  override def detachFromStore(searchConnector: SearchConnector): StoreIndependentMove =
+    StoreIndependentSwapMove(
+      first = searchConnector.detachVariable(first),
+      firstIndex = firstIndex,
+      second = searchConnector.detachVariable(second),
+      secondIndex = secondIndex,
+      objValueAfter = objValueAfter,
+      neighborhoodName = neighborhoodName
+    )
+}
+
+case class StoreIndependentSwapMove(
+  first: Int,
+  firstIndex: Int,
+  second: Int,
+  secondIndex: Int,
+  objValueAfter: Long,
+  neighborhoodName: String
+) extends StoreIndependentMove(objValueAfter) {
+  override def attachMoveToStore(searchConnector: SearchConnector): Move =
+    SwapMove(
+      first = searchConnector.attachIntVarToStore(first),
+      firstIndex = firstIndex,
+      second = searchConnector.attachIntVarToStore(second),
+      secondIndex = secondIndex,
+      objValueAfter = objValueAfter,
+      neighborhoodName = neighborhoodName
+    )
 }

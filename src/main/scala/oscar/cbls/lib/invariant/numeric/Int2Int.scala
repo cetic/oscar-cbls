@@ -16,6 +16,16 @@ package oscar.cbls.lib.invariant.numeric
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.{Invariant, Store}
 
+/** Companion object of the [[Int2Int]] invariant. */
+object Int2Int {
+  def apply(input: IntVariable, fun: Long => Long, cached: Boolean = false): IntVariable = {
+    val store  = input.model
+    val output = IntVariable(store, fun(input.value()))
+    val _      = new Int2Int(store, input, output, fun, cached)
+    output
+  }
+}
+
 /** A helper to define an Invariant from a `Long => Long` function. This invariant is not
   * incremental. So, it should be only uses for very simple functions. It maintains `output =`
   * `fun(input)`.

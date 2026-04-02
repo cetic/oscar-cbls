@@ -27,8 +27,7 @@ package object cbls extends Predefined {
   implicit def int2IntConst(x: Int)(implicit model: Model): IntVariable =
     new IntConstant(model.store, value = x)
 
-  /** Implicit conversion of a constant Long value to an associated integer variable in a
-    * [[oscar.cbls.modeling.Model]].
+  /** Implicit conversion of a constant Long value to an associated integer variable in a [[Model]].
     *
     * @param x
     *   The constant integer.
@@ -38,7 +37,7 @@ package object cbls extends Predefined {
   implicit def long2IntConst(x: Long)(implicit model: Model): IntVariable =
     new IntConstant(model.store, value = x)
 
-  /** Shortcut for adding an integer variable to the implicitly defined [[Model]].
+  /** Shortcut for adding an [[IntVariable]] to the implicitly defined [[Model]].
     *
     * @param initialValue
     *   initial value of the variable
@@ -50,6 +49,8 @@ package object cbls extends Predefined {
     *   optional name of the variable
     * @param model
     *   the implicitly defined model
+    * @return
+    *   a reference to the variable
     */
   implicit def intVar(initialValue: Long, min: Long, max: Long, name: String = "")(implicit
     model: Model
@@ -57,7 +58,7 @@ package object cbls extends Predefined {
     model.intVar(initialValue: Long, min, max, name)
   }
 
-  /** Shortcut for adding a set variable to the implicitly defined [[Model]].
+  /** Shortcut for adding a [[SetVariable]] to the implicitly defined [[Model]].
     *
     * @param initialValue
     *   initial value of the variable
@@ -69,11 +70,34 @@ package object cbls extends Predefined {
     *   optional name of the variable
     * @param model
     *   the implicitly defined model
+    * @return
+    *   a reference to the variable
     */
-  implicit def setVar(initialValue: Set[Int], min: Long, max: Long, name: String = "")(implicit
+  implicit def setVar(initialValue: Set[Int], min: Int, max: Int, name: String = "")(implicit
     model: Model
   ): SetVariable = {
     model.setVar(initialValue, min, max, name)
+  }
+
+  /** Shortcut for adding a [[SeqVariable]] to the implicitly defined [[Model]].
+    *
+    * @param initialValue
+    *   initial value of the variable
+    * @param min
+    *   minimum value that an integer element of the sequence can have
+    * @param max
+    *   maximum value that an integer element of the sequence can have
+    * @param name
+    *   optional name of the variable
+    * @param model
+    *   the implicitly defined model
+    * @return
+    *   a reference to the variable
+    */
+  implicit def seqVar(initialValue: List[Int], min: Int, max: Int, name: String = "")(implicit
+    model: Model
+  ): SeqVariable = {
+    model.seqVar(initialValue, min, max, name)
   }
 
   /** Shortcut for adding a binary variable to the implicitly defined [[Model]].
@@ -84,6 +108,8 @@ package object cbls extends Predefined {
     *   optional name of the variable
     * @param model
     *   the implicitly defined model
+    * @return
+    *   a reference to the variable
     */
   implicit def binaryVar(initialValue: Long, name: String = "")(implicit
     model: Model

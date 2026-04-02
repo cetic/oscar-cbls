@@ -46,7 +46,7 @@ object Size {
   *   The size of the SeqVariable.
   */
 class Size(model: Store, input: SeqVariable, output: IntVariable)
-    extends Invariant(model, Some(s"Size maintainer of ${input.name()}"))
+    extends Invariant(model, Some(s"Size maintainer of ${input.name}"))
     with SeqNotificationTarget {
 
   input.registerStaticallyAndDynamicallyListeningElement(this)

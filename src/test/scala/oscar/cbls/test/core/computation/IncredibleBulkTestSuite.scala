@@ -10,10 +10,10 @@ import oscar.cbls.lib.invariant.numeric.Sum
 
 // Test class for an Invariant that maintains the sum of its input variables.
 case class SumBulkTestInvariant(
-  store: Store,
+  st: Store,
   inputVariables: List[IntVariable],
   outputVariable: IntVariable
-) extends Invariant(store)
+) extends Invariant(st)
     with IntNotificationTarget {
   // Register output variable as output
   outputVariable.setDefiningInvariant(this)

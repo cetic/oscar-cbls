@@ -19,7 +19,8 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.logic.Filter
-import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBench, TestBenchSut}
 
 class FilterTestSuite extends AnyFunSuite with Matchers {
 
@@ -30,7 +31,7 @@ class FilterTestSuite extends AnyFunSuite with Matchers {
     val values = Array.range(0, 11)
     val input  = values.map(v => IntVariable(store, v))
     val output = SetVariable(store, Set.empty)
-    val inv    = Filter(store, input, output, predicate, bulkUsed = false)
+    val inv    = Filter(store, input, output, predicate)
     store.close()
 
     (store, input, output, inv)
@@ -84,17 +85,17 @@ class FilterTestSuite extends AnyFunSuite with Matchers {
     val model                     = new Store(debugLevel = 3)
     val input: Array[IntVariable] = Array.empty
     val output: SetVariable       = SetVariable(model, Set(0))
-    Filter(model, input, output, bulkUsed = false)
+    Filter(model, input, output)
     model.close()
     output.value() shouldBe empty
   }
 
   test("Filter: test bench") {
-    def createFilter(model: Store) = {
+    def createFilter(model: Model) = {
       val nbValue = 1000
-      val input   = Array.fill(nbValue)(IntVariable(model, 0))
-      val output  = SetVariable(model, Set.empty)
-      val inv     = Filter(model, input, output, _ % 5 == 0, bulkUsed = false)
+      val input   = Array.fill(nbValue)(model.intVar(0, Long.MinValue, Long.MaxValue))
+      val output  = model.setVar(Set.empty, 0, nbValue - 1)
+      val inv     = Filter(model.store, input, output, _ % 5 == 0)
 
       TestBenchSut(inv, Array.from(input), Array(output))
     }

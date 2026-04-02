@@ -1,4 +1,17 @@
-package oscar.cbls.test.invBench
+// OscaR is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 2.1 of the License, or
+// (at your option) any later version.
+//
+// OscaR is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License  for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License along with OscaR.
+// If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+
+package oscar.cbls.util.invBench
 
 import oscar.cbls.core.computation.set.SetVariable
 import org.scalacheck.Gen
@@ -6,7 +19,8 @@ import org.scalacheck.Arbitrary.arbitrary
 import scala.annotation.tailrec
 import oscar.cbls.core.computation.Variable
 
-/** Defines the move that adds and removes values from a SetVariable
+/** Defines the move that adds and removes values from a
+  * [[oscar.cbls.core.computation.set.SetVariable]].
   *
   * @param addedValues
   *   The values that will be added
@@ -39,19 +53,19 @@ case class SetMove(addedValues: Set[Int], removedValues: Set[Int], id: Int)
     }
   }
 
-  override def toString = s"SetMovement(added: $addedValues,removed: $removedValues)"
+  override def toString = s"SetMovement(added: $addedValues,removed: $removedValues,id: $id)"
 
   private def updateSetState(state: SetVarState): SetVarState = {
     SetVarState(state.value ++ addedValues -- removedValues, state.id, state.domain)
   }
 }
 
-/** Defines the move that assigns a value to a SetVariable
+/** Defines the move that assigns a value to a [[oscar.cbls.core.computation.set.SetVariable]].
   *
   * @param newValues
-  *   The new value that will be assigned
+  *   The new value that will be assigned.
   * @param id
-  *   The id of the variable
+  *   The id of the variable.
   */
 case class SetAssignMove(newValues: Set[Int], id: Int) extends VariableMove(id) {
   override def mkMove(testVar: Variable): Unit = {
@@ -68,11 +82,11 @@ case class SetAssignMove(newValues: Set[Int], id: Int) extends VariableMove(id) 
     }
   }
 
-  override def toString: String = s"SetAssignMove($newValues)"
+  override def toString: String = s"SetAssignMove($newValues id:$id)"
 
 }
 
-/** Defines the state of a Set variable
+/** Defines the state of a [[oscar.cbls.core.computation.set.SetVariable]].
   *
   * @param value
   *   The current value of the variable
@@ -85,7 +99,7 @@ case class SetVarState(value: Set[Int], id: Int, domain: Option[(Int, Int)])
     extends VariableState(id) {
 
   override def toString: String = {
-    val domainString = domain.map(d => s", domain:[${d._1},${d._2}]").getOrElse("")
+    val domainString = domain.map(d => s", domain:[${d._1},${d._2}] id=$id").getOrElse("")
     s"SetVarState(value: $value$domainString)"
   }
 
@@ -102,9 +116,9 @@ case class SetVarState(value: Set[Int], id: Int, domain: Option[(Int, Int)])
     }
   }
 
-  /** Checks if all possible values are in the Set.
+  /** Checks if all possible values are in the set.
     *
-    * Given the nature of a Set, once it contains all its domain, there is no way to add more
+    * Given the nature of a set, once it contains all its domain, there is no way to add more
     * values.
     */
   private def allValuesInSet(): Boolean = {
@@ -165,5 +179,4 @@ case class SetVarState(value: Set[Int], id: Int, domain: Option[(Int, Int)])
     }
     Gen.oneOf(generateAssignMove(), addRemoveGenMove)
   }
-
 }
