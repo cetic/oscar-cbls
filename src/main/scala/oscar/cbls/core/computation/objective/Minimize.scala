@@ -14,8 +14,9 @@
 package oscar.cbls.core.computation.objective
 
 import oscar.cbls.core.computation.integer.IntVariable
+import oscar.cbls.core.distributed.computation.{SearchConnector, StoreIndependentMinimize, StoreIndependentObjective}
 import oscar.cbls.core.search.profiling.NeighborhoodProfiler
-import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound, SimpleNeighborhood}
+import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound}
 
 /** Companion object of Minimize */
 object Minimize {
@@ -117,4 +118,19 @@ class Minimize(
     }
 
   override def toString: String = "Minimize"
+
+  /** Detaches the objective function from the [[Store]] so it can be attached to another [[Store]]
+    * A method that all Objective should implement so it can be used in a distributed search setting
+    * @param searchConnector
+    *   a [[SearchConnector]] featuring detach and attach method
+    * @return
+    *   a [[StoreIndependentObjective]] that can be attached to another store and will represent the
+    *   same thing
+    */
+  override def detachFromStore(searchConnector: SearchConnector): StoreIndependentObjective =
+    StoreIndependentMinimize(
+      objValue = objValue.id,
+      mustBeZero = mustBeZero.map(_.id),
+      underApproximatedObjValue = underApproximatedObjValue.map(_.id)
+    )
 }

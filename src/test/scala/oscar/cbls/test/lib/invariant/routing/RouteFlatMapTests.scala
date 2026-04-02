@@ -19,20 +19,11 @@ import org.scalatest.matchers.must.Matchers
 import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.Store
 import oscar.cbls.lib.invariant.routing.RouteFlatMap
+import oscar.cbls.modeling.Model
 import oscar.cbls.modeling.routing.VRS
-import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
+import oscar.cbls.util.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
 class RouteFlatMapTests extends AnyFunSuite with Matchers {
-
-  test("RouteFlatMap: asymmetric function are forbidden") {
-    val model = new Store(debugLevel = 3)
-    val vrs   = VRS(model, 5, 2)
-    val _ =
-      an[IllegalArgumentException] must be thrownBy RouteFlatMap(
-        vrs,
-        (x: Int, y: Int) => Set.from(x - y to x + y)
-      )
-  }
 
   test("RouteFlatMap: checkInternals fails with wrong output") {
     val model = new Store(debugLevel = 3)
@@ -45,18 +36,7 @@ class RouteFlatMapTests extends AnyFunSuite with Matchers {
     an[IllegalArgumentException] must be thrownBy inv.checkInternals()
 
   }
-
-  test("RouteFlatMap: checkInternals fails with wrong number of duplicates") {
-    val model = new Store(debugLevel = 3)
-    val vrs   = VRS(model, 5, 2)
-    val inv   = RouteFlatMap(vrs, (_, _) => Set(0, 1, 2))
-    model.close()
-    vrs.routes := IntSequence(List(0, 2, 3, 1, 4))
-    model.propagate()
-    inv.numDuplicates := 10
-    an[IllegalArgumentException] must be thrownBy inv.checkInternals()
-  }
-
+  
   test("RouteFlatMap: nbOccurrence works as expected") {
     val model = new Store(debugLevel = 3)
     val vrs   = VRS(model, 3, 1)
@@ -76,54 +56,65 @@ class RouteFlatMapTests extends AnyFunSuite with Matchers {
     inv.nbOccurrence(5) must be(1)
   }
 
-  test("RouteFlatMap test bench") {
-    val n = 25
-    val v = 5
-
-    class RouteFlatMapTestBench(additionalSeed: List[String] = List())
-        extends InvTestBenchWithConstGen[Array[Array[Set[Int]]]](
-          "RouteFlatMap test bench",
-          additionalSeed
-        ) {
-
-      override def genConst(): Gen[Array[Array[Set[Int]]]] = {
-        val setGen: Gen[Set[Int]] =
-          for {
-            size <- Gen.choose(1, 10)
-            set  <- Gen.sequence[Set[Int], Int](Set.fill(size)(Gen.choose(0, 50)))
-          } yield set
-
-        val rowGen: Gen[Array[Set[Int]]] =
-          Gen.sequence[Array[Set[Int]], Set[Int]](Array.fill(n)(setGen))
-        val genMatrix: Gen[Array[Array[Set[Int]]]] =
-          Gen.sequence[Array[Array[Set[Int]]], Array[Set[Int]]](Array.fill(n)(rowGen))
-        for {
-          m <- genMatrix
-        } yield makeItSymmetric(m)
-      }
-
-      override def createTestBenchSut(
-        model: Store,
-        inputData: Array[Array[Set[Int]]]
-      ): TestBenchSut = {
-        val vrs: VRS = VRS(model, n, v)
-        val inv      = RouteFlatMap(vrs, (i, j) => inputData(i)(j))
-        TestBenchSut(inv, Array(vrs.routes), Array(inv.output), Some(vrs))
-      }
-
-      override def typeTToString(elem: Array[Array[Set[Int]]]): String = {
-        s"Data:\nArray(Array(${elem.map(l => l.mkString(",")).mkString("),\n Array(")})"
-      }
-
-      private def makeItSymmetric(m: Array[Array[Set[Int]]]): Array[Array[Set[Int]]] = {
-        for (i <- m.indices) {
-          for (j <- i until m.length) m(j)(i) = m(i)(j)
-        }
-        m
-      }
-    }
-
-    val bench = new RouteFlatMapTestBench()
+  test("RouteFlatMap test bench - Symmetric function") {
+    val n     = 25
+    val v     = 5
+    val bench = new RouteFlatMapTestBench(n, v, true)
     bench.test()
   }
+
+  test("RouteFlatMap test bench - Asymmetric function") {
+    val n     = 25
+    val v     = 5
+    val bench = new RouteFlatMapTestBench(n, v, false)
+    bench.test()
+  }
+
+  private class RouteFlatMapTestBench(
+    n: Int,
+    v: Int,
+    symmetric: Boolean,
+    additionalSeed: List[String] = List()
+  ) extends InvTestBenchWithConstGen[Array[Array[Set[Int]]]](
+        s"RouteFlatMap ${if (symmetric) "Symmetric" else "Asymmetric"} test bench",
+        additionalSeed
+      ) {
+
+    override def genConst(): Gen[Array[Array[Set[Int]]]] = {
+      val setGen: Gen[Set[Int]] =
+        for {
+          size <- Gen.choose(1, 10)
+          set  <- Gen.sequence[Set[Int], Int](Set.fill(size)(Gen.choose(0, 50)))
+        } yield set
+
+      val rowGen: Gen[Array[Set[Int]]] =
+        Gen.sequence[Array[Set[Int]], Set[Int]](Array.fill(n)(setGen))
+      val genMatrix: Gen[Array[Array[Set[Int]]]] =
+        Gen.sequence[Array[Array[Set[Int]]], Array[Set[Int]]](Array.fill(n)(rowGen))
+      for {
+        m <- genMatrix
+      } yield if (symmetric) makeItSymmetric(m) else m
+    }
+
+    override def createTestBenchSut(
+      model: Model,
+      inputData: Array[Array[Set[Int]]]
+    ): TestBenchSut = {
+      val vrs: VRS = model.vrs(n, v)
+      val inv      = RouteFlatMap(vrs, (i, j) => inputData(i)(j), symmetric)
+      TestBenchSut(inv, Array(vrs.routes), Array(inv.output), Some(vrs))
+    }
+
+    override def typeTToString(elem: Array[Array[Set[Int]]]): String = {
+      s"Data:\nArray(Array(${elem.map(l => l.mkString(",")).mkString("),\n Array(")})"
+    }
+
+    private def makeItSymmetric(m: Array[Array[Set[Int]]]): Array[Array[Set[Int]]] = {
+      for (i <- m.indices) {
+        for (j <- i until m.length) m(j)(i) = m(i)(j)
+      }
+      m
+    }
+  }
+
 }

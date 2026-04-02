@@ -7,8 +7,6 @@ case class DummyMove(_objAfter: Long, simpleNeighborhood: DummySimpleNeighborhoo
     extends Move(_objAfter, simpleNeighborhood.name) {
 
   override def commit(): Unit = {}
-
-  override def objAfter(): Long = _objAfter
 }
 
 class DummySimpleNeighborhood extends SimpleNeighborhood[DummyMove]("") {

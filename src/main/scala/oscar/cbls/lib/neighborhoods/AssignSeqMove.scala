@@ -15,6 +15,7 @@ package oscar.cbls.lib.neighborhoods
 
 import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.seq.SeqVariable
+import oscar.cbls.core.distributed.computation.{SearchConnector, StoreIndependentMove}
 import oscar.cbls.core.search.Move
 
 /** Move that assigns a new value to a sequence.
@@ -43,4 +44,20 @@ case class AssignSeqMove(
   }
 
   override def toString: String = s"$neighborhoodName " + super.toString + moveStr
+}
+
+case class StoreIndependentAssignSeqMove(
+  seq: Int,
+  newValue: List[Int],
+  objValueAfter: Long,
+  neighborhoodName: String
+) extends StoreIndependentMove(objValueAfter) {
+
+  override def attachMoveToStore(searchConnector: SearchConnector): Move =
+    AssignSeqMove(
+      seq = searchConnector.attachSeqVarToStore(seq),
+      newValue = IntSequence(newValue),
+      objValueAfter,
+      neighborhoodName
+    )
 }

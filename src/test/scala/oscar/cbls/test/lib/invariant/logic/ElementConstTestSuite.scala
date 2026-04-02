@@ -19,7 +19,8 @@ import org.scalatest.matchers.should.Matchers
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.lib.invariant.logic.ElementConst
-import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
 class ElementConstTestSuite extends AnyFunSuite with Matchers {
 
@@ -68,11 +69,10 @@ class ElementConstTestSuite extends AnyFunSuite with Matchers {
         } yield array.toArray
       }
 
-      override def createTestBenchSut(model: Store, inputData: Array[Long]): TestBenchSut = {
-        val index = IntVariable(model, 0)
-        index.setDomain(0, inputData.length - 1)
-        val output = IntVariable(model, 0)
-        val inv    = ElementConst(model, inputData, index, output)
+      override def createTestBenchSut(model: Model, inputData: Array[Long]): TestBenchSut = {
+        val index  = model.intVar(0, 0, inputData.length - 1)
+        val output = model.intVar(0, Long.MinValue, Long.MaxValue)
+        val inv    = ElementConst(model.store, inputData, index, output)
 
         TestBenchSut(inv, Array(index), Array(output))
       }

@@ -36,7 +36,7 @@ object CompositeLeftStub {
   * __How does it work ?__
   *   - Left Neighborhood uses this custom Objective to get its Exploration instance.
   *   - Instead of checking a left move, we instantiate the move and use it to generate the right
-  *     Neighborhood with its own custom [[CompositeRightStub]] Objective.
+  *     Neighborhood with its own custom composite right stub Objective.
   *   - The result of this search is given by the right neighborhood when asking a move from it.
   *   - Given this result a [[oscar.cbls.lib.neighborhoods.combinator.CompositeMove]] is created
   *     with the left move.
@@ -75,8 +75,10 @@ class CompositeLeftStub(
         compositionProfiler.foreach(_.setCurrentRight(rightNeighborhood.searchProfiler().get))
 
         // The composite move is the result of asking a move from the right Neighborhood.
+        val rightExplorer: Exploration[Move] = baseObj.newExploration[Move]()
+
         val rightResult =
-          rightNeighborhood.getMove(new CompositeRightStub(baseObj, baseObjExplorer, leftMove))
+          rightNeighborhood.getMove(new CompositeRightStub(baseObj, rightExplorer, leftMove))
         compositionProfiler.foreach(_.mergeDynProfiler())
         val composite = rightResult match {
           case NoMoveFound => NoMoveFound

@@ -17,6 +17,11 @@ import oscar.cbls.core.computation.integer.IntSavedValue
 import oscar.cbls.core.computation.seq.SeqSavedValue
 import oscar.cbls.core.computation.set.SetSavedValue
 import oscar.cbls.core.computation.{SavedValue, Solution}
+import oscar.cbls.core.distributed.computation.{
+  SearchConnector,
+  StoreIndependentMove,
+  StoreIndependentSolution
+}
 import oscar.cbls.core.search.Move
 
 case class LoadSolutionMove(
@@ -25,9 +30,9 @@ case class LoadSolutionMove(
   override val neighborhoodName: String
 ) extends Move(objValueAfter, neighborhoodName) {
 
-  private val moveString: String = {
+  private lazy val moveString: String = {
     var str: String = ""
-    for (savedValue: SavedValue <- s.savedValues) {
+    for (savedValue: SavedValue <- s.valueOfDecisionVariables) {
       savedValue match {
         case intSavedValue: IntSavedValue =>
           if (!intSavedValue.variable.isConstant)
@@ -50,4 +55,17 @@ case class LoadSolutionMove(
        |Loads:
        |$moveString""".stripMargin
   }
+}
+
+case class StoreIndependentLoadSolutionMove(
+  solution: StoreIndependentSolution,
+  override val objAfter: Long,
+  neighborhoodName: String
+) extends StoreIndependentMove(objAfter) {
+  override def attachMoveToStore(searchConnector: SearchConnector): Move =
+    LoadSolutionMove(
+      searchConnector.attachSolutionToStore(solution),
+      objValueAfter = objAfter,
+      neighborhoodName
+    )
 }

@@ -14,8 +14,9 @@
 package oscar.cbls.core.computation.objective
 
 import oscar.cbls.core.computation.integer.IntVariable
+import oscar.cbls.core.distributed.computation.{SearchConnector, StoreIndependentMaximize, StoreIndependentObjective}
 import oscar.cbls.core.search.profiling.NeighborhoodProfiler
-import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound, SimpleNeighborhood}
+import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound}
 
 /** Companion object of Maximize */
 object Maximize {
@@ -117,4 +118,11 @@ class Maximize(
     }
 
   override def toString: String = "Maximize"
+
+  override def detachFromStore(searchConnector: SearchConnector): StoreIndependentObjective =
+    StoreIndependentMaximize(
+      objValue = objValue.id,
+      mustBeZero = mustBeZero.map(_.id),
+      overApproximatedObjValue = overApproximatedObjValue.map(_.id)
+    )
 }

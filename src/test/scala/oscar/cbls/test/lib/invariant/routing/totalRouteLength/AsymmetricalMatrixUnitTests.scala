@@ -45,20 +45,6 @@ class AsymmetricalMatrixUnitTests extends AnyFunSuite with Matchers {
 
   }
 
-  test("TotalRouteLength do not accept when the matrix is not symetric") {
-    val model = new Store()
-    val vrs   = VRS(model, 4, 1)
-    val distanceMatrix: Array[Array[Long]] =
-      Array(Array(1, 0, 0, 1), Array(0, 1, 0, 0), Array(1, 2, 3, 4), Array(1, 4, 3, 3))
-
-    an[IllegalArgumentException] should be thrownBy TotalRouteLength(
-      vrs,
-      distanceMatrix,
-      matrixIsSymmetrical = true
-    )
-
-  }
-
   private val distanceMatrix: Array[Array[Long]] = Array(
     Array(42254, 85511, 75508, 21913, 32574, 45017, 76208, 27770, 79010, 52963),
     Array(48628, 2052, 8290, 6497, 60336, 22092, 55622, 9817, 37527, 90359),

@@ -3,14 +3,18 @@ package oscar.cbls.test.core.search
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
+import oscar.cbls.IntVariable
+import oscar.cbls.algo.generator.RoutingGenerator
 import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.computation.integer.IntVariable
-import oscar.cbls.core.computation.objective.Minimize
+import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
+import oscar.cbls.core.computation.objective.{Exploration, Minimize}
+import oscar.cbls.core.search.loop.LoopBehavior
+import oscar.cbls.core.search.{NoMoveFound, SimpleNeighborhood}
 import oscar.cbls.lib.invariant.routing.TotalRouteLength
 import oscar.cbls.lib.neighborhoods.Assign
-import oscar.cbls.lib.neighborhoods.combinator.{AndThen, DynAndThen, Exhaust}
-import oscar.cbls.lib.neighborhoods.routing.{OnePointMove, TwoOpt}
+import oscar.cbls.lib.neighborhoods.combinator.{AndThen, DynAndThen, Exhaust, LoadSolutionMove}
+import oscar.cbls.lib.neighborhoods.routing.{InsertPointUnroutedFirst, OnePointMove, RemovePoint, TwoOpt}
 import oscar.cbls.modeling.routing.VRS
 
 import scala.util.Random
@@ -181,4 +185,204 @@ class TestDynAndThen extends AnyFunSuite with Matchers {
     noException mustBe thrownBy(search.doAllMoves(obj))
 
   }
+
+  test("DynAndThen with best loop in left neighborhood") {
+    def generateManhattanDistMatrix(points: Array[(Int, Int)]): Array[Array[Long]] = {
+      def dist(x1: (Int, Int), x2: (Int, Int)): Long = (x1._1 - x2._1).abs + (x1._2 - x2._2).abs
+
+      Array.tabulate(points.length, points.length)((i: Int, j: Int) => dist(points(i), points(j)))
+    }
+
+    val points: Array[(Int, Int)] =
+      Array(
+        (0, 0),
+        (0, -10),
+        (-2, 4),
+        (-2, 6),
+        (2, 6),
+        (2, 4),
+        (2, -14),
+        (2, -16),
+        (-2, -16),
+        (-2, -14)
+      )
+
+    val distMatrix: Array[Array[Long]] = generateManhattanDistMatrix(points)
+
+    val model  = new Store()
+    val vrs    = VRS(model, 10, 1, debug = true)
+    val output = TotalRouteLength(vrs, distMatrix).routeLength
+
+    val obj = Minimize(output)
+    model.close()
+    vrs.routes := IntSequence(List(0, 1, 2, 3))
+    model.propagate()
+
+    val insert = InsertPointUnroutedFirst(
+      vrs,
+      () => vrs.unroutedNodes,
+      _ => List(0),
+      selectNodeBehavior = LoopBehavior.best()
+    )
+    val remove = RemovePoint(
+      vrs,
+      () => vrs.routedWithoutVehicles.value(),
+      selectNodesToRemoveBehavior = LoopBehavior.first()
+    )
+
+    val search = AndThen(insert, remove)
+
+    noException must be thrownBy search.doAllMoves(obj)
+  }
+
+  test("DynAndThen with best loop in right neighborhood") {
+    def generateManhattanDistMatrix(points: Array[(Int, Int)]): Array[Array[Long]] = {
+      def dist(x1: (Int, Int), x2: (Int, Int)): Long = (x1._1 - x2._1).abs + (x1._2 - x2._2).abs
+
+      Array.tabulate(points.length, points.length)((i: Int, j: Int) => dist(points(i), points(j)))
+    }
+
+    val points: Array[(Int, Int)] =
+      Array(
+        (0, 0),
+        (0, -10),
+        (-2, 4),
+        (-2, 6),
+        (2, 6),
+        (2, 4),
+        (2, -14),
+        (2, -16),
+        (-2, -16),
+        (-2, -14)
+      )
+
+    val distMatrix: Array[Array[Long]] = generateManhattanDistMatrix(points)
+
+    val model  = new Store()
+    val vrs    = VRS(model, 10, 1, debug = true)
+    val output = TotalRouteLength(vrs, distMatrix).routeLength
+
+    val obj = Minimize(output)
+    model.close()
+    vrs.routes := IntSequence(List(0, 1, 2, 3))
+    model.propagate()
+    val insert = InsertPointUnroutedFirst(
+      vrs,
+      () => vrs.unroutedNodes,
+      _ => List(0),
+      selectNodeBehavior = LoopBehavior.best()
+    )
+    val remove = RemovePoint(
+      vrs,
+      () => vrs.routedWithoutVehicles.value(),
+      selectNodesToRemoveBehavior = LoopBehavior.first()
+    )
+
+    val search = AndThen(insert, remove)
+
+    noException must be thrownBy search.doAllMoves(obj)
+  }
+
+  test("DynAndThen with best loop in left and right neighborhood") {
+    def generateManhattanDistMatrix(points: Array[(Int, Int)]): Array[Array[Long]] = {
+      def dist(x1: (Int, Int), x2: (Int, Int)): Long = (x1._1 - x2._1).abs + (x1._2 - x2._2).abs
+
+      Array.tabulate(points.length, points.length)((i: Int, j: Int) => dist(points(i), points(j)))
+    }
+
+    val points: Array[(Int, Int)] =
+      Array(
+        (0, 0),
+        (0, -10),
+        (-2, 4),
+        (-2, 6),
+        (2, 6),
+        (2, 4),
+        (2, -14),
+        (2, -16),
+        (-2, -16),
+        (-2, -14)
+      )
+
+    val distMatrix: Array[Array[Long]] = generateManhattanDistMatrix(points)
+
+    val model  = new Store()
+    val vrs    = VRS(model, 10, 1, debug = true)
+    val output = TotalRouteLength(vrs, distMatrix).routeLength
+
+    val obj = Minimize(output)
+    model.close()
+    vrs.routes := IntSequence(List(0, 1, 2, 3))
+    model.propagate()
+    val insert = InsertPointUnroutedFirst(
+      vrs,
+      () => vrs.unroutedNodes,
+      _ => List(0),
+      selectNodeBehavior = LoopBehavior.best()
+    )
+    val remove = RemovePoint(
+      vrs,
+      () => vrs.routedWithoutVehicles.value(),
+      selectNodesToRemoveBehavior = LoopBehavior.best()
+    )
+
+    val search = AndThen(insert, remove)
+
+    noException must be thrownBy search.doAllMoves(obj)
+  }
+
+  test("AndThen with left neighborhood choosing the best solution to load") {
+    val nbNodes    = 100
+    val nbVehicles = 1
+    val (_, distanceMatrix, unroutedPenalty, _) =
+      RoutingGenerator.generateRandomRoutingData(nbNodes, 2, 0, seed = 42)
+
+    val model  = new Store()
+    val vrs    = VRS(model, nbNodes, nbVehicles, debug = true)
+    val output = TotalRouteLength(vrs, distanceMatrix).routeLength
+
+    // Creates a penalty for unrouted nodes (otherwise no nodes will be routed)
+    val unroutedNodesAndPenalty: IntVariable =
+      vrs.unrouted.size() * IntConstant(model, unroutedPenalty)
+    val obj = Minimize(output + unroutedNodesAndPenalty)
+    model.close()
+
+    val left = new LoadingNeighborhood(vrs)
+    val right = RemovePoint(
+      vrs,
+      () => vrs.routedWithoutVehicles.value(),
+      selectNodesToRemoveBehavior = LoopBehavior.best()
+    )
+
+    val search = AndThen(left, right)
+    noException must be thrownBy search.doAllMoves(obj)
+
+  }
+
+  private class LoadingNeighborhood(vrs: VRS)
+      extends SimpleNeighborhood[LoadSolutionMove]("Loading Neighborhood for test") {
+
+    override protected def exploreNeighborhood(exploration: Exploration[LoadSolutionMove]): Unit = {
+      val initialSolution             = vrs.store.extractSolution()
+      val solutions: Array[List[Int]] = Array(List(1, 2, 3, 4, 5), List(44, 46, 42))
+
+      val (solIterator, stopSol) = LoopBehavior.best().toIterator(solutions.indices)
+
+      for (i <- solIterator) {
+        val current = 0 :: solutions(i)
+        vrs.routes := IntSequence(current)
+        val currentSolution = vrs.routes.model.extractSolution()
+        searchProfiler().foreach(x => x.neighborSelected())
+        exploration.checkNeighborWP(objValue => LoadSolutionMove(currentSolution, objValue, name))
+        initialSolution.restoreSolution()
+
+        if (exploration.toReturn != NoMoveFound) stopSol()
+      }
+    }
+
+    override def doMove(move: LoadSolutionMove): Unit = move.commit()
+
+    override def reset(): Unit = {}
+  }
+
 }

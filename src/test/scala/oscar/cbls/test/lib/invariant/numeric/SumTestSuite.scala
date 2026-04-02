@@ -19,7 +19,8 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBench, TestBenchSut}
 
 class SumTestSuite extends AnyFunSuite with Matchers {
 
@@ -28,7 +29,7 @@ class SumTestSuite extends AnyFunSuite with Matchers {
     val input: Array[IntVariable]             = Array.range(0, 6).map(i => IntVariable(store, i))
     val listenedVariablesIndices: SetVariable = SetVariable(store, set)
     val output                                = IntVariable(store, 0)
-    val inv = Sum(store, input, listenedVariablesIndices, output, bulkUsed = false)
+    val inv                                   = Sum(store, input, listenedVariablesIndices, output)
     store.close()
 
     (store, input, listenedVariablesIndices, output, inv)
@@ -80,13 +81,12 @@ class SumTestSuite extends AnyFunSuite with Matchers {
   }
 
   test("Sum: test bench") {
-    def createSum(model: Store): TestBenchSut = {
+    def createSum(model: Model): TestBenchSut = {
       val nbValues = 1000
-      val input    = Array.fill(nbValues)(IntVariable(model, 0))
-      val listened = SetVariable(model, Set.empty[Int])
-      listened.setDomain(0, nbValues - 1)
-      val output = IntVariable(model, 0)
-      val inv    = Sum(model, input, listened, output, bulkUsed = false)
+      val input    = Array.fill(nbValues)(model.intVar(0, Long.MinValue, Long.MaxValue))
+      val listened = model.setVar(Set.empty, 0, nbValues - 1)
+      val output   = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val inv      = Sum(model.store, input, listened, output)
       TestBenchSut(inv, listened +: input, Array(output))
     }
 

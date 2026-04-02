@@ -17,6 +17,7 @@ import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.integer.{IntSavedValue, IntVariable}
 import oscar.cbls.core.computation.seq.{SeqSavedValue, SeqVariable}
 import oscar.cbls.core.computation.set.{SetSavedValue, SetVariable}
+import oscar.cbls.core.distributed.computation.StoreIndependentSolution
 
 import scala.collection.immutable.HashMap
 
@@ -25,7 +26,7 @@ import scala.collection.immutable.HashMap
   * It contains the value of the decisions variable as well as some additional specified variable.
   * This solution can be restored using the restoreSolution method.
   *
-  * @param savedValues
+  * @param valueOfDecisionVariables
   *   The values of the saved decision variable.
   * @param additionalSavedVariables
   *   The list of additional variables that need to be saved.
@@ -35,14 +36,32 @@ import scala.collection.immutable.HashMap
   *   The identification of this solution.
   */
 case class Solution(
-  savedValues: Iterable[SavedValue],
+  valueOfDecisionVariables: Iterable[SavedValue],
   additionalSavedVariables: Iterable[SavedValue],
-  model: Store,
-  solutionNb: Int
-) {
+  model: Store
+) extends Ordered[Solution] {
+
+  override def compare(that: Solution): Int = {
+    require(this.model == that.model, "The two solutions must have the same store")
+
+    val thisSaved = this.valueOfDecisionVariables.toList.sortBy(_.variable.id)
+    val thatSaved = that.valueOfDecisionVariables.toList.sortBy(_.variable.id)
+    require(
+      thisSaved.map(_.variable.id) equals thatSaved.map(_.variable.id),
+      "This saved value id do not match that saved value id"
+    )
+
+    for ((thisSaved, thatSaved) <- thisSaved.zip(thatSaved)) {
+      val comp = thisSaved compare thatSaved
+      if (comp != 0) return comp
+    }
+    0
+  }
 
   private lazy val variableToValue: HashMap[Variable, SavedValue] =
-    HashMap.from((savedValues ++ additionalSavedVariables).map(sv => sv.variable -> sv))
+    HashMap.from(
+      (valueOfDecisionVariables ++ additionalSavedVariables).map(sv => sv.variable -> sv)
+    )
 
   /** Returns the saved value of the given [[IntVariable]].
     *
@@ -106,12 +125,12 @@ case class Solution(
 
   /** Restores the model in its previous saved state by restoring each decision variable. */
   def restoreSolution(): Unit = {
-    savedValues.foreach(sv => sv.restoreValue())
+    valueOfDecisionVariables.foreach(sv => sv.restoreValue())
     model.propagate()
   }
 
   /** Displays the solution as a human-readable string */
   override def toString: String = {
-    "Solution(\n\t" + savedValues.map(_.toString()).mkString(",\n\t") + "\n)"
+    "Solution(\n\t" + valueOfDecisionVariables.map(_.toString()).mkString(",\n\t") + "\n)"
   }
 }

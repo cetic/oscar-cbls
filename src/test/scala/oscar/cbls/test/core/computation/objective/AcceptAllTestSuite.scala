@@ -61,7 +61,7 @@ class AcceptAllTestSuite extends AnyFunSuite with Matchers {
     val assign = Assign(Array(objValue), (_, _) => List(42, 24))
 
     val acceptAll =
-      AcceptAll(objValue, List(lesserThanFortyConstraint), allowsConstrainViolation = true)
+      AcceptAll(objValue, List(lesserThanFortyConstraint), allowsConstraintViolation = true)
     assign.doAllMoves(acceptAll, shouldStop = _ >= 1)
     objValue.value() must be(42)
   }

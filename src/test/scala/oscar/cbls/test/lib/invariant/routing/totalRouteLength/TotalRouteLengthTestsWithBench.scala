@@ -5,8 +5,9 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import oscar.cbls.core.computation.Store
 import oscar.cbls.lib.invariant.routing.TotalRouteLength
+import oscar.cbls.modeling.Model
 import oscar.cbls.modeling.routing.VRS
-import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
+import oscar.cbls.util.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
 class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
@@ -43,7 +44,9 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
   test("TotalRouteLength working in bench, symmetrical matrix") {
     class TotalRouteLengthTestBench
-        extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Symmetrical Matrix") {
+        extends InvTestBenchWithConstGen[Array[Array[Long]]](
+          "TotalRouteLength Symmetrical Matrix"
+        ) {
 
       override def genConst(): Gen[Array[Array[Long]]] = {
         val arrayGen: Gen[Array[Long]] =
@@ -53,9 +56,9 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
         for (m <- matrixGen) yield mkMatrix(m, symmetrical = true, zeroDiag = false)
       }
 
-      override def createTestBenchSut(model: Store, inputData: Array[Array[Long]]): TestBenchSut = {
+      override def createTestBenchSut(model: Model, inputData: Array[Array[Long]]): TestBenchSut = {
 
-        val vrs         = VRS(model, nbNodes, nbVehicles)
+        val vrs         = model.vrs(nbNodes, nbVehicles)
         val routeLength = TotalRouteLength(vrs, inputData)
         TestBenchSut(routeLength, Array(vrs.routes), Array(routeLength.routeLength), Some(vrs))
       }
@@ -88,9 +91,9 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
         for (m <- matrixGen) yield mkMatrix(m, symmetrical = true, zeroDiag = true)
       }
 
-      override def createTestBenchSut(model: Store, inputData: Array[Array[Long]]): TestBenchSut = {
+      override def createTestBenchSut(model: Model, inputData: Array[Array[Long]]): TestBenchSut = {
 
-        val vrs         = VRS(model, nbNodes, nbVehicles)
+        val vrs         = model.vrs(nbNodes, nbVehicles)
         val routeLength = TotalRouteLength(vrs, inputData)
         TestBenchSut(routeLength, Array(vrs.routes), Array(routeLength.routeLength), Some(vrs))
       }
@@ -121,9 +124,9 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
         Gen.sequence[Array[Array[Long]], Array[Long]](Array.fill(nbNodes)(arrayGen))
       }
 
-      override def createTestBenchSut(model: Store, inputData: Array[Array[Long]]): TestBenchSut = {
+      override def createTestBenchSut(model: Model, inputData: Array[Array[Long]]): TestBenchSut = {
 
-        val vrs         = VRS(model, nbNodes, nbVehicles)
+        val vrs         = model.vrs(nbNodes, nbVehicles)
         val routeLength = TotalRouteLength(vrs, inputData)
         TestBenchSut(routeLength, Array(vrs.routes), Array(routeLength.routeLength), Some(vrs))
       }
@@ -156,9 +159,9 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
         for (m <- matrixGen) yield mkMatrix(m, symmetrical = false, zeroDiag = true)
       }
 
-      override def createTestBenchSut(model: Store, inputData: Array[Array[Long]]): TestBenchSut = {
+      override def createTestBenchSut(model: Model, inputData: Array[Array[Long]]): TestBenchSut = {
 
-        val vrs         = VRS(model, nbNodes, nbVehicles)
+        val vrs         = model.vrs(nbNodes, nbVehicles)
         val routeLength = TotalRouteLength(vrs, inputData)
         TestBenchSut(routeLength, Array(vrs.routes), Array(routeLength.routeLength), Some(vrs))
       }

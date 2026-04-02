@@ -41,7 +41,8 @@ object SetConstant {
   * @param value
   *   The value of this constant variable.
   */
-class SetConstant(model: Store, value: Set[Int]) extends SetVariable(model, value, true) {
+class SetConstant(model: Store, value: Set[Int])
+    extends SetVariable(model, value, true, givenNameOpt = Some(s"SetConstant(${value.mkString(",")})")) {
   override protected def setValue(value: Set[Int]): Unit = {
     require(requirement = false, "The value of a constant variable cannot be changed")
   }

@@ -16,8 +16,9 @@ package oscar.cbls.util
 /** A collection of various numeric utility methods. */
 object Numeric {
 
-  /** Truncates a bigInt number within the range of [[Long]] values. For instance, if the number is
-    * larger than [[Long.MaxValue]], the output will be [[Long.MaxValue]]. Use with caution.
+  /** Truncates a bigInt number within the range of [[scala.Long]] values. For instance, if the
+    * number is larger than [[scala.Long.MaxValue]], the output will be [[scala.Long.MaxValue]]. Use
+    * with caution.
     */
   def limitToLong(bi: BigInt): Long = ((bi min Long.MaxValue) max Long.MinValue).toLong
 }

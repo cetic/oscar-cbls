@@ -1,9 +1,10 @@
 package oscar.cbls.modeling.search
 
-import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.neighborhoods.{Assign, DoIt, Swap}
+import oscar.cbls.modeling.Neighborhoods.combinator.{acceptAll, maxMoves}
+import oscar.cbls.{Model, Neighborhood}
 
 /** This trait collects methods used to instantiate basic neighborhoods to construct a search
   * procedure.
@@ -68,7 +69,7 @@ trait Neighborhoods {
       hotRestart
     )
 
-  /** Instantiates a DoIt that ''always'' returns a move that performs a given unit function.
+  /** Instantiates a DoIt that returns a move that performs a given unit function.
     *
     * @param model
     *   Model attached to the search.
@@ -77,8 +78,22 @@ trait Neighborhoods {
     * @param name
     *   The name of the Neighborhood.
     */
-  def doIt(doIt: () => Unit, name: String = "DoIt")(implicit model: Store): DoIt =
-    DoIt(model, doIt, neighborhoodName = name)
+  def doIt(doIt: () => Unit, name: String = "DoIt")(implicit model: Model): DoIt =
+    DoIt(model.store, doIt, neighborhoodName = name)
+
+  /** Instantiate a neighborhood that does not change the solution. Can be used in
+    * [[oscar.cbls.lib.neighborhoods.combinator.PopulationBasedSearch]] to allows an individual to
+    * skip a generation.
+    *
+    * @param name
+    *   the name of the neighborhood
+    * @param model
+    *   model attached to the search
+    * @return
+    *   a neighborhood that does nothing
+    */
+  def doNothing(name: String = "DoNothing")(implicit model: Model): Neighborhood =
+    maxMoves(acceptAll(doIt(() => {}, name)(model)), 1)
 
   /** Instantiates a [[oscar.cbls.lib.neighborhoods.Swap]] that exchanges the values of two
     * [[oscar.cbls.core.computation.integer.IntVariable]].

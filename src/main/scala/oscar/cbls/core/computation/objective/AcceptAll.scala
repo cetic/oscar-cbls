@@ -14,8 +14,8 @@
 package oscar.cbls.core.computation.objective
 
 import oscar.cbls.core.computation.integer.IntVariable
-import oscar.cbls.core.search.profiling.{NeighborhoodProfiler, SearchProfiler}
-import oscar.cbls.core.search.{Move, MoveFound, SimpleNeighborhood}
+import oscar.cbls.core.search.profiling.NeighborhoodProfiler
+import oscar.cbls.core.search.{Move, MoveFound}
 
 /** Companion object of AcceptAll */
 object AcceptAll {
@@ -30,7 +30,7 @@ object AcceptAll {
     * @param mustBeZero
     *   The list of strong constraints that have to be respected in order to evaluate and
     *   potentially accept the new objValue. This list can be empty.
-    * @param allowsConstrainViolation
+    * @param allowsConstraintViolation
     *   Should the objective accept solutions that violate some strong constraints. Set to `false`
     *   by default. <br> '''WARNING:''' if set to `true`, it can lead to chaotic behaviour of the
     *   search. For example, in a pick-up and delivery problem the search can be stuck in solution
@@ -39,9 +39,9 @@ object AcceptAll {
   def apply(
     objValue: IntVariable,
     mustBeZero: List[IntVariable] = List.empty,
-    allowsConstrainViolation: Boolean = false
+    allowsConstraintViolation: Boolean = false
   ): AcceptAll = {
-    new AcceptAll(objValue, mustBeZero, allowsConstrainViolation)
+    new AcceptAll(objValue, mustBeZero, allowsConstraintViolation)
   }
 }
 
@@ -55,7 +55,7 @@ object AcceptAll {
   * @param mustBeZero
   *   The list of strong constraints that have to be respected in order to evaluate and potentially
   *   accept the new objValue. This list can be empty.
-  * @param allowsConstrainViolation
+  * @param allowsConstraintViolation
   *   Should the objective accept solutions that violate some strong constraints. <br>
   *   '''WARNING:''' if set to `true`, it can lead to chaotic behaviour of the search. For example,
   *   in a pick-up and delivery problem the search can be stuck in solution where pick-up point are
@@ -64,7 +64,7 @@ object AcceptAll {
 class AcceptAll(
   objValue: IntVariable,
   mustBeZero: List[IntVariable],
-  allowsConstrainViolation: Boolean
+  allowsConstraintViolation: Boolean
 ) extends Objective(objValue, mustBeZero) {
 
   override lazy val worstValue: Long = 0L
@@ -77,7 +77,7 @@ class AcceptAll(
     new Exploration[M](currentObjValue(), searchProfilerOpt) {
       override def checkNeighbor(buildMove: Long => M): Unit = {
         val newValue = objValue.value()
-        if (!allowsConstrainViolation && mustBeZero.exists(_.value() != 0L)) {
+        if (!allowsConstraintViolation && mustBeZero.exists(_.value() != 0L)) {
           verboseMode.moveExplored(() => buildMove(newValue))
         } else {
           _toReturn = MoveFound(buildMove(newValue))
@@ -87,6 +87,6 @@ class AcceptAll(
     }
 
   override def toString: String =
-    s"Accept all movements ${if (allowsConstrainViolation) "even those violating constraints."
+    s"Accept all movements ${if (allowsConstraintViolation) "even those violating constraints."
       else " that does not violate strong constraints."}"
 }

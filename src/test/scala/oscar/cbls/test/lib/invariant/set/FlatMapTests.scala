@@ -20,7 +20,8 @@ import org.scalatest.matchers.must.Matchers
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.set.FlatMap
-import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
 class FlatMapTests extends AnyFunSuite with Matchers {
 
@@ -48,12 +49,11 @@ class FlatMapTests extends AnyFunSuite with Matchers {
         for (l <- Gen.listOfN(maxValue.toInt - minValue.toInt + 1, setGen)) yield l.toArray
       }
 
-      override def createTestBenchSut(model: Store, inputData: Array[Set[Int]]): TestBenchSut = {
-        val input: SetVariable = SetVariable(model, Set.empty)
-        input.setDomain(minValue, maxValue)
+      override def createTestBenchSut(model: Model, inputData: Array[Set[Int]]): TestBenchSut = {
+        val input: SetVariable   = model.setVar(Set.empty, minValue.toInt, maxValue.toInt)
         val fun: Int => Set[Int] = (x: Int) => inputData(x - minValue.toInt)
-        val output: SetVariable  = SetVariable(model, Set.empty)
-        val inv: FlatMap         = FlatMap(model, input, fun, output)
+        val output: SetVariable  = model.setVar(Set.empty, Int.MinValue, Int.MaxValue)
+        val inv: FlatMap         = FlatMap(model.store, input, fun, output)
 
         TestBenchSut(inv, Array(input), Array(output))
       }

@@ -1,8 +1,11 @@
 package oscar.cbls.modeling.search
 
+import oscar.cbls.Neighborhood
+import oscar.cbls.core.computation.Solution
 import oscar.cbls.core.computation.objective.Objective
-import oscar.cbls.core.search.{Move, Neighborhood}
+import oscar.cbls.core.search.Move
 import oscar.cbls.lib.neighborhoods.combinator._
+import oscar.cbls.modeling.Model
 import oscar.cbls.visual.OscaRDisplay
 
 /** This trait collects methods used to construct combinators, which are mechanisms used to combine
@@ -150,6 +153,28 @@ trait Combinator {
     name: String = "DoOnMove"
   ): DoOnMove = DoOnMove(n, procedureBeforeMove, procedureAfterMove, procedureOnNoMoveFound, name)
 
+  /** A neighborhood combinator that stops the search after a maximal number of explorations. The
+    * combinator can be reset through the reset method.
+    *
+    * @param neighborhood
+    *   The neighborhood to explore.
+    * @param maxMoves
+    *   The maximal number of times the neighborhood can be explored. Passed this number, this
+    *   combinator will return NoMoveFound without exploring this neighborhood.
+    */
+  def maxMoves(neighborhood: Neighborhood, maxMoves: Int): MaxMoves =
+    MaxMoves(neighborhood, maxMoves)
+
+  /** A combinator that modifies the objective function into an acceptAll (except constraint
+    * violations, depending on the parameter)
+    * @param n
+    *   the base neighborhood
+    * @param allowsConstrainViolation
+    *   true to also accept violation of string constraints (but it is a bad idea)
+    */
+  def acceptAll(n: Neighborhood, allowsConstrainViolation: Boolean = false): AcceptAll =
+    AcceptAll(n, allowsConstrainViolation)
+
   /** Constructs a variant of [[oscar.cbls.lib.neighborhoods.combinator.DoOnMove]] combinator that
     * only executes a custom unit function ''before'' the move is committed.
     *
@@ -248,9 +273,28 @@ trait Combinator {
   def exhaust(first: Neighborhood, second: Neighborhood, name: String = "Exhaust"): Exhaust =
     Exhaust(first, second, name)
 
+  /** Constructs a [[oscar.cbls.lib.neighborhoods.combinator.Exhaust]] combinator.
+    *
+    * Exhaust all the neighborhoods in the input list.
+    *
+    * @param subNeighborhoods
+    *   The Neighborhood that this combinator handles. Those can be
+    *   [[oscar.cbls.core.search.SimpleNeighborhood]] or other NeighborhoodCombinator.
+    * @return
+    *   An instance of [[oscar.cbls.lib.neighborhoods.combinator.Exhaust]] combinator.
+    */
+  def exhaust(subNeighborhoods: List[Neighborhood]): Neighborhood = {
+    subNeighborhoods match {
+      case Nil          => throw new Error("Cannot exhaust an empty list of neighborhoods")
+      case first :: Nil => first
+      case first :: second :: Nil => exhaust(first, second)
+      case head :: tail           => exhaust(head, exhaust(tail))
+    }
+  }
+
   /** Constructs a [[oscar.cbls.lib.neighborhoods.combinator.ExhaustBack]] combinator.
     *
-    * Exhausts first neighborhood then second neighborhood, finaly goes back to first neighborhood.
+    * Exhausts first neighborhood then second neighborhood, finally goes back to first neighborhood.
     * Until no move can be found using either first or second neighborhood.
     *
     * @param first
@@ -271,6 +315,27 @@ trait Combinator {
     second: Neighborhood,
     name: String = "ExhaustBack"
   ): ExhaustBack = ExhaustBack(first, second, name)
+
+  /** Constructs a [[oscar.cbls.lib.neighborhoods.combinator.ExhaustBack]] combinator.
+    *
+    * Exhaust all the input neighborhood and then go back to the first one until no move can be
+    * found.
+    *
+    * @param subNeighborhoods
+    *   The Neighborhood that this combinator handles. Those can be
+    *   [[oscar.cbls.core.search.SimpleNeighborhood]] or other NeighborhoodCombinator.
+    * @return
+    *   An instance of [[oscar.cbls.lib.neighborhoods.combinator.ExhaustBack]] combinator.
+    */
+  def exhaustBack(subNeighborhoods: List[Neighborhood]): Neighborhood = {
+    subNeighborhoods match {
+      case Nil          => throw new Error("Cannot exhaust an empty list of neighborhoods")
+      case first :: Nil => first
+      case _ =>
+        val (prev, last) = subNeighborhoods.splitAt(subNeighborhoods.length - 1)
+        exhaustBack(exhaust(prev), last.head)
+    }
+  }
 
   /** Constructs a [[oscar.cbls.lib.neighborhoods.combinator.Restart]] combinator.
     *
@@ -386,4 +451,144 @@ trait Combinator {
     )
   }
 
+  /** A combinator that implements a soft Timeout; ie the search will only be stopped between
+    * neighborhood explorations. If you use very long-lasting neighborhood, this is not very helpful
+    * for you.
+    *
+    * If you use a fast neighborhood that searches in less than the granularity of
+    * [[https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/System.html#nanoTime() System.nanoTime()]]
+    * on your JVM, this variant might fail to work properly, and it is advised that you use
+    * [[SoftTimeoutGlobal]] instead.
+    *
+    * @param neighborhood
+    *   A neighborhood.
+    * @param maxTimeBudgetNanosecond
+    *   The maximal amount of time that the neighborhood is allowed to search, summing up on all its
+    *   explorations.
+    */
+  def softTimeout(neighborhood: Neighborhood, maxTimeBudgetNanosecond: Long): SoftTimeoutPerMove =
+    new SoftTimeoutPerMove(neighborhood, maxTimeBudgetNanosecond)
+
+  /** A combinator that implements a soft Timeout; ie the search will only be stopped between
+    * neighborhood explorations. If you use very long-lasting neighborhood, this is not very helpful
+    * for you.
+    *
+    * This variant consider the amount of time between the first exploration of the neighborhood and
+    * the start of each exploration. If you perform additional actions in between explorations, such
+    * as visualization or saving result, this time is also considered in te timeout. If this is an
+    * issue for you, you should use the [[SoftTimeoutPerMove]] combinator instead
+    *
+    * @param neighborhood
+    *   A neighborhood.
+    * @param maxTimeBudgetNanosecond
+    *   The maximal amount of time that the neighborhood is allowed to search, taken as the time
+    *   difference between the first exploration and the start of each exploration .
+    */
+  def softTimeoutGlobal(
+    neighborhood: Neighborhood,
+    maxTimeBudgetNanosecond: Long
+  ): SoftTimeoutGlobal =
+    new SoftTimeoutGlobal(neighborhood, maxTimeBudgetNanosecond)
+
+  /** This combinator implements a population-based meta-heuristics that maintains a population of
+    * solutions and repeatedly (1) diversifies and improves the solutions by applying a set of
+    * neighborhoods on each of them (2) selects the best solutions in this population. Upon
+    * termination, the best solution in this population is returned, only if it improves over the
+    * initial solution.
+    *
+    * This if a form of restart meta-heuristics that allows devoting little time to low quality
+    * solutions while maintaining some diversity throughout the search.
+    *
+    * This combinator is a long-lasting combinator; ie: it will perform and manage it business and
+    * return a loadSolutionMove. It cannot be used on the right hand side of a dynAndThen for
+    * instance.
+    *
+    * This meta-heuristics is described in:
+    *
+    * [[https://doi.org/10.1016/j.cor.2020.105166 Florian Arnold and Kenneth Sörensen, A progressive filtering heuristic for the location-routing problem and variants, Computers & Operations Research, vol 129, 2021,]]
+    *
+    * The difference with this reference paper is that this implementation does not feature a
+    * crossover operator that would combine two solutions into a new one.
+    *
+    * Since this combinator is long-lasting, it will perform many local searches in a row and has
+    * different verbose modes than the general verbosity defined for combinators. The search
+    * procedure used by this meta heuristics are allocated a lower verbosity mode. The verbosity are
+    * as follows:
+    *   - verbose = 1 will show the evolution of the population and the base search procedure has
+    *     verbose = 0
+    *   - verbose = 2 will show mode insight on the algorithm: how many identical individuals were
+    *     filtered and the base search procedure has verbose = 0
+    *   - verbose = 3 also shows the start and end information the search procedure used in the
+    *     search. and the base search procedure has verbose = 1
+    *
+    * @tparam D
+    *   the type of the data associated to each individual
+    *
+    * @param initData
+    *   generates data for the initial individual
+    * @param step
+    *   the definition of the diversification and filtering operations to apply on the population.
+    *   <p>
+    *
+    * It receives:
+    *   - the iteration number,
+    *   - the data associated to each individual.
+    *
+    * It returns optionally :
+    *   - an optional objective used for the current population. If `None` the global objective is
+    *     used.
+    *   - a function used to generate children of an individual. This function receives the
+    *     [[oscar.cbls.core.computation.Solution]] and the data associated to the individual. It
+    *     returns whether the individual must be keep in the next generation, a list of
+    *     [[Neighborhood]] used to generate children the data associated to each child ;
+    *   - how many individual must be kept in the next generation ;
+    *     - an optional [[Objective]] that can be used to generate and select children.
+    *
+    * If it returns None, the meta-heuristics stops and the best current solution is returned if
+    * accepted by the objective.
+    * @param maxIt
+    *   The maximal number of iterations. This is somehow redundant with the previous parameter, but
+    *   if you need it, it is there.
+    * @param saveAnytimeBest
+    *   - If set to true, the meta-heuristics will permanently ensure that the best solution
+    *     encountered during the meta-heuristics is saved and reloaded into the population. This can
+    *     happen if the neighborhood performs a restart or any form of randomization. This parameter
+    *     only makes sense if keepOld is set to false.
+    *   - If set to false, this additional mechanism is deactivated.
+    * @param filterRedundantElements
+    *   - If set to true, the meta-heuristics will identify and filter identical solutions in the
+    *     population within each iteration.
+    *   - If set to false, this additional mechanism is deactivated. It can then spare time. Logs
+    *     are provided in the console about the number of elements in the population that are
+    *     filtered out by this mechanism.
+    * @param dropIfNoMoveFound
+    *   - If set to true, a solution will be dropped if no move is found by a neighborhood.
+    *   - If set to false, a solution is kept in the population even if no move is found by the
+    *     neighborhood.
+    * @param name
+    *   a name for this combinator that will be used in logs
+    * @param model
+    *   the model containing the store used to save the solutions
+    */
+  def populationBasedSearch[D](
+    initData: () => D,
+    step: (
+      Int,
+      List[D]
+    ) => Option[((Solution, D) => (Boolean, List[(Neighborhood, D)]), Int, Option[Objective])],
+    maxIt: Int = Int.MaxValue,
+    saveAnytimeBest: Boolean = false,
+    filterRedundantElements: Boolean = true,
+    dropIfNoMoveFound: Boolean = false,
+    name: String = "PopulationBasedSearch"
+  )(implicit model: Model): PopulationBasedSearch[D] = PopulationBasedSearch(
+    initData,
+    step,
+    model.store,
+    maxIt,
+    saveAnytimeBest,
+    filterRedundantElements,
+    dropIfNoMoveFound,
+    name
+  )
 }

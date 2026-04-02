@@ -13,6 +13,8 @@
 
 package oscar.cbls.core.search
 
+import oscar.cbls.core.distributed.computation.{SearchConnector, StoreIndependentMove}
+
 /** A Move represents the modifications made to the model to reach a specific new neighbor.
   *
   * Each [[oscar.cbls.core.search.Neighborhood]] has to implement it's own Move by extending this
@@ -22,6 +24,7 @@ package oscar.cbls.core.search
   * concrete [[oscar.cbls.core.computation.objective.Objective]] for validation. Then the
   * Neighborhood roll-back it's modification of the model. If the selected neighbor is accepted,
   * OscaR.cbls uses the Move to re-apply the modifications to the model and commit them.
+  *
   * @param objValueAfter
   *   The objective value of the neighbor. Used for comparison and validation.
   * @param neighborhoodName
@@ -32,15 +35,14 @@ abstract class Move(val objValueAfter: Long, val neighborhoodName: String) {
   /** Applies the modifications of this Move. */
   def commit(): Unit
 
-  /** Returns the new objective value when applying this Move. */
-  def objAfter(): Long = objValueAfter
-
   override def toString: String = s" objValue after $objValueAfter"
 
-  /** Method that can be overridden when some of the variable of the Move has to be regularized when
-    * using composite moves (namely moves working with
-    * [[oscar.cbls.algo.sequence.IntSequenceExplorer]]).
+  /** A method that detaches a move from a [[oscar.cbls.core.computation.Store]], so it can be
+    * attached to another one
+    * @param searchConnector
+    *   the class that has method to detach variables from the [[oscar.cbls.core.computation.Store]]
+    * @return
+    *   a detached move that cna be attached to another [[oscar.cbls.core.computation.Store]]
     */
-  def regularize(): Move = this
-
+  def detachFromStore(searchConnector: SearchConnector): StoreIndependentMove = ???
 }

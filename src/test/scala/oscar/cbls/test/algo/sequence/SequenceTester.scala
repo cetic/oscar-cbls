@@ -4,9 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import oscar.cbls.algo.sequence.{ConcreteIntSequence, IntSequence}
 
-import scala.util.Random
-
-object SequenceTester extends AnyFunSuite with Matchers {
+private[sequence] object SequenceTester extends AnyFunSuite with Matchers {
 
   /** Exhaustively compares the IntSequence with a reference list, supposed to be identical.
     *
@@ -36,8 +34,12 @@ object SequenceTester extends AnyFunSuite with Matchers {
 
     // Checking positionOf occurrence and contains...
     // This will intentionally search for items that are not in the list
+
+    val otherElem: List[Int] =
+      List.tabulate(list.size)(x => if (x % 2 == 0) list.max + x else list.min)
+
     if (list.nonEmpty) {
-      for (i <- list ::: List.fill(list.size)(Random.nextInt(list.max))) {
+      for (i <- list ::: otherElem) {
         intSeq.nbOccurrence(i) should be(list.count(_ == i))
         intSeq.contains(i) should be(list.contains(i))
         if (intSeq.contains(i)) {

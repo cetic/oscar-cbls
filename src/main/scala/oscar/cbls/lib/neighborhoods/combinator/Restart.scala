@@ -101,10 +101,11 @@ class Restart(
 ) extends NeighborhoodCombinator(name, List(n, neighborhoodForRestart)) {
 
   // The best solution overall the moves
-  private var bestObj: Long          = _
-  private var bestSolution: Solution = _
+  private var bestObj: Long                  = _
+  private var bestSolution: Option[Solution] = None
 
   private var numConsecutiveRestartWithoutImprovement: Int = 0
+  private var bestSolutionThisRestart: Boolean             = false
   private var numRestartInTotal: Int                       = 0
 
   private var _compositionProfilerOpt: Option[CombinatorProfiler] = None
@@ -131,16 +132,17 @@ class Restart(
     val model = objective.objValue.model
     n.getMove(objective) match {
       case mf: MoveFound =>
-        if (bestSolution == null || objective.isValueNewBest(bestObj, mf.objAfter())) {
+        if (bestSolution.isEmpty || objective.isValueNewBest(bestObj, mf.objAfter())) {
           // Extracts the solution before the move
-          val currentSolution = model.extractSolution()
+          val currentSolution = Some(model.extractSolution())
           val currentObj      = objective.objValue.value()
 
           // Gets the solution after the commited move
           commitMove(objective, mf.move)
 
           bestObj = mf.objAfter()
-          bestSolution = model.extractSolution()
+          bestSolution = Some(model.extractSolution())
+          bestSolutionThisRestart = true
 
           // Rollbacks the solution
           loadSolution(objective, currentSolution, currentObj)
@@ -149,13 +151,17 @@ class Restart(
         searchProfiler().foreach(_.positiveEventPercentagePushEvent("Restart", isPositive = false))
         mf
       case NoMoveFound =>
+        numConsecutiveRestartWithoutImprovement =
+          if (bestSolutionThisRestart) 0 else numConsecutiveRestartWithoutImprovement + 1
+
         n.reset()
         if (
           numConsecutiveRestartWithoutImprovement < maxConsecutiveRestartWithoutImprovement
           && numRestartInTotal < maxNumberOfRestartInTotal
         ) {
           searchProfiler().foreach(_.positiveEventPercentagePushEvent("Restart", isPositive = true))
-          numConsecutiveRestartWithoutImprovement += 1
+
+          bestSolutionThisRestart = false
           numRestartInTotal += 1
           if (restartFromBest) loadSolution(objective, bestSolution, bestObj)
 
@@ -171,12 +177,15 @@ class Restart(
     }
   }
 
-  private def loadSolution(objective: Objective, s: Solution, objAtSolution: Long): Unit = {
-    setObjectiveVerboseMode(
-      objective,
-      0
-    ) // The loading do not have to be displayed in the profiling
-    commitMove(objective, LoadSolutionMove(s, objAtSolution, "Load best solution found."))
-    setObjectiveVerboseMode(objective, verbosityLevel)
-  }
+  private def loadSolution(objective: Objective, s: Option[Solution], objAtSolution: Long): Unit =
+    s match {
+      case Some(s) =>
+        setObjectiveVerboseMode(
+          objective,
+          0
+        ) // The loading do not have to be displayed in the profiling
+        commitMove(objective, LoadSolutionMove(s, objAtSolution, "Load best solution found."))
+        setObjectiveVerboseMode(objective, verbosityLevel)
+      case None => ;
+    }
 }

@@ -20,7 +20,8 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.lib.invariant.minmax.{Max2, Min2}
 import oscar.cbls.lib.invariant.numeric._
-import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBench, TestBenchSut}
 
 class BasicNumericInvariantsTestSuite extends AnyFunSuite {
 
@@ -55,10 +56,10 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
   }
 
   test(s"Abs invariant works as expected") {
-    def createInv(model: Store): TestBenchSut = {
-      val input  = IntVariable(model, 0)
-      val output = IntVariable(model, 0)
-      val inv    = Abs(model, input, output)
+    def createInv(model: Model): TestBenchSut = {
+      val input  = model.intVar(0, Int.MinValue, Int.MaxValue)
+      val output = model.intVar(0, 0, Int.MaxValue)
+      val inv    = Abs(model.store, input, output)
 
       TestBenchSut(inv, Array(input), Array(output))
     }
@@ -68,10 +69,10 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
   }
 
   test(s"Opposite invariant works as expected") {
-    def createInv(model: Store): TestBenchSut = {
-      val input  = IntVariable(model, 0)
-      val output = IntVariable(model, 0)
-      val inv    = Opposite(model, input, output)
+    def createInv(model: Model): TestBenchSut = {
+      val input  = model.intVar(0, Int.MinValue, Int.MaxValue)
+      val output = model.intVar(0, Int.MinValue, Int.MaxValue)
+      val inv    = Opposite(model.store, input, output)
 
       TestBenchSut(inv, Array(input), Array(output))
     }
@@ -81,10 +82,10 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
   }
 
   test(s"Square invariant works as expected ") {
-    def createInv(model: Store): TestBenchSut = {
-      val input  = IntVariable(model, 0)
-      val output = IntVariable(model, 0)
-      val inv    = Square(model, input, output)
+    def createInv(model: Model): TestBenchSut = {
+      val input  = model.intVar(0, Int.MinValue, Int.MaxValue)
+      val output = model.intVar(0, 0, Long.MaxValue)
+      val inv    = Square(model.store, input, output)
 
       TestBenchSut(inv, Array(input), Array(output))
     }
@@ -94,11 +95,10 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
   }
 
   test(s"Sqrt invariant works as expected") {
-    def createInv(model: Store): TestBenchSut = {
-      val input = IntVariable(model, 0)
-      input.setDomain(0L, Long.MaxValue)
-      val output = IntVariable(model, 0)
-      val inv    = Abs(model, input, output)
+    def createInv(model: Model): TestBenchSut = {
+      val input  = model.intVar(0, 0, Long.MaxValue)
+      val output = model.intVar(0, 0, Long.MaxValue)
+      val inv    = Sqrt(model.store, input, output)
 
       TestBenchSut(inv, Array(input), Array(output))
     }
@@ -108,11 +108,11 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
   }
 
   test(s"Sum2 invariant works as expected") {
-    def createInv(model: Store): TestBenchSut = {
-      val a      = IntVariable(model, 0)
-      val b      = IntVariable(model, 0)
-      val output = IntVariable(model, 0)
-      val inv    = Sum2(model, a, b, output)
+    def createInv(model: Model): TestBenchSut = {
+      val a      = model.intVar(0, Int.MinValue, Int.MaxValue)
+      val b      = model.intVar(0, Int.MinValue, Int.MaxValue)
+      val output = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val inv    = Sum2(model.store, a, b, output)
 
       TestBenchSut(inv, Array(a, b), Array(output))
     }
@@ -122,11 +122,11 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
   }
 
   test(s"Minus2 invariant works as expected") {
-    def createInv(model: Store): TestBenchSut = {
-      val a      = IntVariable(model, 0)
-      val b      = IntVariable(model, 0)
-      val output = IntVariable(model, 0)
-      val inv    = Minus2(model, a, b, output)
+    def createInv(model: Model): TestBenchSut = {
+      val a      = model.intVar(0, Int.MinValue, Int.MaxValue)
+      val b      = model.intVar(0, Int.MinValue, Int.MaxValue)
+      val output = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val inv    = Minus2(model.store, a, b, output)
 
       TestBenchSut(inv, Array(a, b), Array(output))
     }
@@ -136,11 +136,11 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
   }
 
   test(s"Prod2 invariant works as expected") {
-    def createInv(model: Store): TestBenchSut = {
-      val a      = IntVariable(model, 0)
-      val b      = IntVariable(model, 0)
-      val output = IntVariable(model, 0)
-      val inv    = Prod2(model, a, b, output)
+    def createInv(model: Model): TestBenchSut = {
+      val a      = model.intVar(0, Int.MinValue, Int.MaxValue)
+      val b      = model.intVar(0, Int.MinValue, Int.MaxValue)
+      val output = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val inv    = Prod2(model.store, a, b, output)
 
       TestBenchSut(inv, Array(a, b), Array(output))
     }
@@ -150,12 +150,11 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
   }
 
   test(s"Div2 invariant works as expected with positive divisor") {
-    def createInv(model: Store): TestBenchSut = {
-      val a = IntVariable(model, 0)
-      val b = IntVariable(model, 1L)
-      b.setDomain(1L, Long.MaxValue)
-      val output = IntVariable(model, 0)
-      val inv    = Div2(model, a, b, output)
+    def createInv(model: Model): TestBenchSut = {
+      val a      = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val b      = model.intVar(1L, 1L, Long.MaxValue)
+      val output = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val inv    = Div2(model.store, a, b, output)
 
       TestBenchSut(inv, Array(a, b), Array(output))
     }
@@ -165,12 +164,11 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
   }
 
   test(s"Div2 invariant works as expected with negative divisor") {
-    def createInv(model: Store): TestBenchSut = {
-      val a = IntVariable(model, 0)
-      val b = IntVariable(model, -1L)
-      b.setDomain(Long.MinValue, -1L)
-      val output = IntVariable(model, 0)
-      val inv    = Div2(model, a, b, output)
+    def createInv(model: Model): TestBenchSut = {
+      val a      = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val b      = model.intVar(-1L, Long.MinValue, -1L)
+      val output = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val inv    = Div2(model.store, a, b, output)
 
       TestBenchSut(inv, Array(a, b), Array(output))
     }
@@ -180,12 +178,11 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
   }
 
   test(s"Mod invariant works as expected with positive divisor") {
-    def createInv(model: Store): TestBenchSut = {
-      val a = IntVariable(model, 0)
-      val b = IntVariable(model, 1L)
-      b.setDomain(1L, Long.MaxValue)
-      val output = IntVariable(model, 0)
-      val inv    = Mod(model, a, b, output)
+    def createInv(model: Model): TestBenchSut = {
+      val a      = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val b      = model.intVar(1L, 1L, Long.MaxValue)
+      val output = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val inv    = Mod(model.store, a, b, output)
 
       TestBenchSut(inv, Array(a, b), Array(output))
     }
@@ -195,12 +192,11 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
   }
 
   test(s"Mod invariant works as expected with negative divisor") {
-    def createInv(model: Store): TestBenchSut = {
-      val a = IntVariable(model, 0)
-      val b = IntVariable(model, -1L)
-      b.setDomain(Long.MinValue, -1L)
-      val output = IntVariable(model, 0)
-      val inv    = Mod(model, a, b, output)
+    def createInv(model: Model): TestBenchSut = {
+      val a      = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val b      = model.intVar(-1L, Long.MinValue, -1L)
+      val output = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val inv    = Mod(model.store, a, b, output)
 
       TestBenchSut(inv, Array(a, b), Array(output))
     }
@@ -210,11 +206,11 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
   }
 
   test(s"Pow invariant works as expected") {
-    def createInv(model: Store): TestBenchSut = {
-      val a      = IntVariable(model, 0)
-      val b      = IntVariable(model, 0)
-      val output = IntVariable(model, 0)
-      val inv    = Pow(model, a, b, output)
+    def createInv(model: Model): TestBenchSut = {
+      val a      = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val b      = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val output = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val inv    = Pow(model.store, a, b, output)
 
       TestBenchSut(inv, Array(a, b), Array(output))
     }
@@ -224,11 +220,11 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
   }
 
   test(s"Max2 invariant works as expected") {
-    def createInv(model: Store): TestBenchSut = {
-      val a      = IntVariable(model, 0)
-      val b      = IntVariable(model, 0)
-      val output = IntVariable(model, 0)
-      val inv    = Max2(model, a, b, output)
+    def createInv(model: Model): TestBenchSut = {
+      val a      = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val b      = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val output = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val inv    = Max2(model.store, a, b, output)
 
       TestBenchSut(inv, Array(a, b), Array(output))
     }
@@ -238,11 +234,11 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
   }
 
   test(s"Min2 invariant works as expected") {
-    def createInv(model: Store): TestBenchSut = {
-      val a      = IntVariable(model, 0)
-      val b      = IntVariable(model, 0)
-      val output = IntVariable(model, 0)
-      val inv    = Min2(model, a, b, output)
+    def createInv(model: Model): TestBenchSut = {
+      val a      = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val b      = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val output = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val inv    = Min2(model.store, a, b, output)
 
       TestBenchSut(inv, Array(a, b), Array(output))
     }

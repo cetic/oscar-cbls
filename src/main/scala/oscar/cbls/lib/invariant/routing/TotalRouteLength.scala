@@ -13,14 +13,13 @@
 
 package oscar.cbls.lib.invariant.routing
 
-import oscar.cbls.modeling.routing.VRS
+import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer, RootIntSequenceExplorer}
 import oscar.cbls.core.computation.Invariant
-import oscar.cbls.core.computation.seq._
 import oscar.cbls.core.computation.integer.IntVariable
-import oscar.cbls.algo.sequence.IntSequenceExplorer
-import oscar.cbls.algo.sequence.RootIntSequenceExplorer
+import oscar.cbls.core.computation.seq._
+import oscar.cbls.modeling.routing.VRS
+
 import scala.annotation.tailrec
-import oscar.cbls.algo.sequence.IntSequence
 
 /** Companion object for class TotalRouteLength.
   */
@@ -160,17 +159,6 @@ class TotalRouteLength(
   matrixIsSymmetrical: Boolean
 ) extends Invariant(vrs.store, Some("Incremental Total Route Length"))
     with SeqNotificationTarget {
-
-  if (matrixIsSymmetrical) {
-    for (i <- 0 until vrs.n) {
-      for (j <- i until vrs.n) {
-        require(
-          distanceFunction(i)(j) == distanceFunction(j)(i),
-          "The distance matrix has to be symmetrical"
-        )
-      }
-    }
-  }
 
   private val routes = vrs.routes
   private val v      = vrs.v

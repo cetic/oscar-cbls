@@ -19,7 +19,8 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.numeric.Prod
-import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBench, TestBenchSut}
 
 class ProdTestSuite extends AnyFunSuite with Matchers {
 
@@ -30,7 +31,7 @@ class ProdTestSuite extends AnyFunSuite with Matchers {
     val input: Array[IntVariable] = Array.range(0, 7).map(i => IntVariable(store, i % 6))
     val listenedVariablesIndices: SetVariable = SetVariable(store, set)
     val output                                = IntVariable(store, 0)
-    val inv = Prod(store, input, listenedVariablesIndices, output, bulkUsed = false)
+    val inv                                   = Prod(store, input, listenedVariablesIndices, output)
     store.close()
 
     (store, input, listenedVariablesIndices, output, inv)
@@ -140,13 +141,12 @@ class ProdTestSuite extends AnyFunSuite with Matchers {
   }
 
   test("Prod: test bench") {
-    def createProd(model: Store): TestBenchSut = {
+    def createProd(model: Model): TestBenchSut = {
       val nbValues = 1000
-      val input    = Array.fill(nbValues)(IntVariable(model, 0))
-      val listened = SetVariable(model, Set.empty[Int])
-      listened.setDomain(0, nbValues - 1)
-      val output = IntVariable(model, 0)
-      val inv    = Prod(model, input, listened, output, bulkUsed = false)
+      val input    = Array.fill(nbValues)(model.intVar(0, -1000, 1000))
+      val listened = model.setVar(Set.empty, 0, nbValues - 1)
+      val output   = model.intVar(0, Long.MinValue, Long.MaxValue)
+      val inv      = Prod(model.store, input, listened, output)
       TestBenchSut(inv, listened +: input, Array(output))
     }
 

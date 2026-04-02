@@ -51,15 +51,15 @@ object SetVariable {
   *   The initial value of the SetVariable
   * @param isConstant
   *   Whether the variable is a constant or not
-  * @param name
+  * @param givenNameOpt
   *   The (optional) name of this variable
   */
 class SetVariable(
   model: Store,
   initialValue: Set[Int],
   isConstant: Boolean = false,
-  name: Option[String] = None
-) extends Variable(model, isConstant, name) {
+  givenNameOpt: Option[String] = None
+) extends Variable(model, isConstant, givenNameOpt) {
 
   override type NotificationTargetType = SetNotificationTarget
 
@@ -129,7 +129,7 @@ class SetVariable(
     */
   def size(): IntVariable = {
     val output: IntVariable = IntVariable(this.model, this.pendingValue.size)
-    Cardinality(this.model, this, output, name)
+    Cardinality(this.model, this, output, Some(name))
     output
   }
 
@@ -188,6 +188,18 @@ class SetVariable(
     output
   }
 
+  /** Returns a new SetVariable by filtering the element of this set.
+    *
+    * @param predicate
+    *   The function used to filter the elements.
+    * @return
+    *   A Set variable maintaining `{x | predicate(x)`.
+    */
+  def filter(predicate: Int => Boolean): SetVariable = {
+    val filterInv = SetFilter(this.model, this, predicate)
+    filterInv()
+  }
+
   /** Changes the value of this variable and schedules it for propagation. */
   protected def setValue(value: Set[Int]): Unit = {
     if (value != _pendingValue) {
@@ -243,7 +255,7 @@ class SetVariable(
     } else false
   }
 
-  override def save(): SavedValue = new SetSavedValue(this)
+  override def save(): SavedValue = SetSavedValue(this, this.value())
 
   override def createGlobalCheckpoint(): SavedCheckpoint = new SetSavedCheckpoint(this)
 
@@ -313,5 +325,5 @@ class SetVariable(
     )
   }
 
-  override def toString: String = s"${name()} - value: ${value()}"
+  override def toString: String = s"${name} - value: ${value()}"
 }

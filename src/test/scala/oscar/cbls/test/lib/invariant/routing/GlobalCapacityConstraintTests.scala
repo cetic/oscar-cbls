@@ -6,8 +6,9 @@ import org.scalatest.matchers.must.Matchers
 import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.Store
 import oscar.cbls.lib.invariant.routing.capacityConstraint.GlobalCapacityConstraint
+import oscar.cbls.modeling.Model
 import oscar.cbls.modeling.routing.VRS
-import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
+import oscar.cbls.util.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
 class GlobalCapacityConstraintTests extends AnyFunSuite with Matchers {
 
@@ -202,11 +203,11 @@ class GlobalCapacityConstraintTests extends AnyFunSuite with Matchers {
     }
 
     override def createTestBenchSut(
-      model: Store,
+      model: Model,
       inputData: (Array[Long], Array[Long], Array[Long])
     ): TestBenchSut = {
 
-      val vrs: VRS = VRS(model, n, v)
+      val vrs: VRS = model.vrs(n, v)
       val inv = GlobalCapacityConstraint(
         vrs,
         inputData._1,

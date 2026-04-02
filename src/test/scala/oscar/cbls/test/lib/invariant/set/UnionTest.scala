@@ -14,22 +14,20 @@
 package oscar.cbls.test.lib.invariant.set
 
 import org.scalatest.funsuite.AnyFunSuite
-import oscar.cbls.core.computation.Store
-import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.set.Union
-import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBench, TestBenchSut}
 
 class UnionTest extends AnyFunSuite {
 
   test("Union invariant is correct ") {
-    def createUnion(model: Store): TestBenchSut = {
-      val A: SetVariable = SetVariable(model, Set.empty, name = Some("A"))
-      val B: SetVariable = SetVariable(model, Set.empty, name = Some("B"))
+    def createUnion(model: Model): TestBenchSut = {
+      val a            = model.setVar(Set.empty, Int.MinValue, Int.MaxValue, name = "A")
+      val b            = model.setVar(Set.empty, Int.MinValue, Int.MaxValue, name = "B")
+      val output       = model.setVar(Set.empty, Int.MinValue, Int.MaxValue, name = "Union")
+      val inter: Union = Union(model.store, a, b, output)
 
-      val output: SetVariable = SetVariable(model, Set.empty, name = Some("Union"))
-      val inter: Union        = Union(model, A, B, output)
-
-      TestBenchSut(inter, Array(A, B), Array(output))
+      TestBenchSut(inter, Array(a, b), Array(output))
     }
 
     val bench: InvTestBench = InvTestBench(createUnion, "Test union invariant")

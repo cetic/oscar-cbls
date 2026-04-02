@@ -49,15 +49,15 @@ object IntVariable {
   *   The initial value of the IntVariable
   * @param isConstant
   *   If the variable is a constant
-  * @param name
+  * @param givenNameOpt
   *   The (optional) name of the Variable.
   */
 class IntVariable(
   model: Store,
   initialValue: Long,
   isConstant: Boolean,
-  name: Option[String] = None
-) extends Variable(model, isConstant, name) {
+  givenNameOpt: Option[String] = None
+) extends Variable(model, isConstant, givenNameOpt) {
 
   override type NotificationTargetType = IntNotificationTarget
 
@@ -99,13 +99,13 @@ class IntVariable(
   }
 
   /** Returns the domain of this variable as an iterable collection. Currently, the type of
-    * collection used is [[collection.immutable.NumericRange.Inclusive]]. The variable's domain must
-    * be defined before invoking.
+    * collection used is [[scala.collection.immutable.NumericRange.Inclusive]]. The variable's
+    * domain must be defined before invoking.
     *
     * @note
     *   Very large domains can cause performance issues.
     *
-    * @throws IllegalArgumentException
+    * @throws java.lang.IllegalArgumentException
     *   if the domain was not defined for this variable.
     */
   def iterableDomain: Iterable[Long] = {
@@ -141,14 +141,38 @@ class IntVariable(
   /** Returns the sum of this variable and another. */
   def +(that: IntVariable): IntVariable = Sum2.result(this, that)
 
+  /** Returns the sum of this variable and an integer. */
+  def +(that: Int): IntVariable = Int2Int(this, _ + that)
+
+  /** Returns the sum of this variable and a long integer. */
+  def +(that: Long): IntVariable = Int2Int(this, _ + that)
+
   /** Returns the difference between this variable and another. */
   def -(that: IntVariable): IntVariable = Minus2.result(this, that)
+
+  /** Returns the difference between this variable and an integer. */
+  def -(that: Int): IntVariable = Int2Int(this, _ - that)
+
+  /** Returns the difference between this variable and a long integer. */
+  def -(that: Long): IntVariable = Int2Int(this, _ - that)
 
   /** Returns the product of this variable and another. */
   def *(that: IntVariable): IntVariable = Prod2.result(this, that)
 
+  /** Returns the product between this variable and an integer. */
+  def *(that: Int): IntVariable = Int2Int(this, _ * that)
+
+  /** Returns the product between this variable and a long integer. */
+  def *(that: Long): IntVariable = Int2Int(this, _ * that)
+
   /** Returns the quotient of this variable and another. */
   def /(that: IntVariable): IntVariable = Div2.result(this, that)
+
+  /** Returns the quotient between this variable and an integer. */
+  def /(that: Int): IntVariable = Int2Int(this, _ / that)
+
+  /** Returns the quotient between this variable and a long integer. */
+  def /(that: Long): IntVariable = Int2Int(this, _ / that)
 
   /** Returns `this` to the power `that`. */
   def ^(that: IntVariable): IntVariable = Pow.result(this, that)
@@ -171,29 +195,41 @@ class IntVariable(
   /** Returns the square of this variable. */
   def square: IntVariable = Square.result(this)
 
+  private def leq(a: Long, b: Long): Long =
+    if (a <= b) 0 else Numeric.limitToLong(BigInt(a) - BigInt(b))
+
   /** Returns a variable that assumes value 0 if this variable is less or equal than another one,
-    * and the magnitude of the difference (limited to [[Long.MaxValue]]) otherwise.
+    * and the magnitude of the difference (limited to [[scala.Long.MaxValue]]) otherwise.
     */
-  def leq(that: IntVariable): IntVariable =
-    IntInt2Int(
-      this,
-      that,
-      (a, b) => {
-        if (a <= b) 0 else Numeric.limitToLong(BigInt(a) - BigInt(b))
-      }
-    )
+  def leq(that: IntVariable): IntVariable = IntInt2Int(this, that, (a, b) => leq(a, b))
+
+  /** Returns a variable that assumes value 0 if this variable is less or equal than an integer, and
+    * the magnitude of the difference (limited to [[scala.Long.MaxValue]]) otherwise.
+    */
+  def leq(that: Int): IntVariable = Int2Int(this, leq(_, that))
+
+  /** Returns a variable that assumes value 0 if this variable is less or equal than a long integer,
+    * and the magnitude of the difference (limited to [[scala.Long.MaxValue]]) otherwise.
+    */
+  def leq(that: Long): IntVariable = Int2Int(this, leq(_, that))
+
+  private def geq(a: Long, b: Long): Long =
+    if (a >= b) 0 else Numeric.limitToLong(BigInt(b) - BigInt(a))
 
   /** Returns a variable that assumes value 0 if this variable is greater or equal than another one,
-    * and the magnitude of the difference (limited to [[Long.MaxValue]]) otherwise.
+    * and the magnitude of the difference (limited to [[scala.Long.MaxValue]]) otherwise.
     */
-  def geq(that: IntVariable): IntVariable =
-    IntInt2Int(
-      this,
-      that,
-      (a, b) => {
-        if (a >= b) 0 else Numeric.limitToLong(BigInt(b) - BigInt(a))
-      }
-    )
+  def geq(that: IntVariable): IntVariable = IntInt2Int(this, that, (a, b) => geq(a, b))
+
+  /** Returns a variable that assumes value 0 if this variable is greater or equal than another one,
+    * and the magnitude of the difference (limited to [[scala.Long.MaxValue]]) otherwise.
+    */
+  def geq(that: Int): IntVariable = Int2Int(this, geq(_, that))
+
+  /** Returns a variable that assumes value 0 if this variable is greater or equal than another one,
+    * and the magnitude of the difference (limited to [[scala.Long.MaxValue]]) otherwise.
+    */
+  def geq(that: Long): IntVariable = Int2Int(this, geq(_, that))
 
   /** Decrements this variable */
   def :--(): Unit = setValue(_pendingValue - 1)
@@ -205,7 +241,7 @@ class IntVariable(
     this.setValue(tmp)
   }
 
-  override def save(): SavedValue = new IntSavedValue(this)
+  override def save(): SavedValue = IntSavedValue(this, this.value())
 
   override def createGlobalCheckpoint(): SavedCheckpoint = new IntSavedCheckpoint(this)
 
@@ -246,5 +282,5 @@ class IntVariable(
   }
 
   override def toString: String =
-    s"${name()} - value : ${value()}"
+    s"${name} - value : ${value()}"
 }

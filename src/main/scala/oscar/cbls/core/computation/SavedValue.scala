@@ -13,12 +13,17 @@
 
 package oscar.cbls.core.computation
 
+import oscar.cbls.core.distributed.computation.StoreIndependentSavedValue
+
 /** The value of a decision [[Variable]] that is part of a [[Solution]]
+  *
   * @param variable
   *   The variable whose value is being saved
   */
-abstract class SavedValue(val variable: Variable) {
+abstract class SavedValue(val variable: Variable) extends Ordered[SavedValue] {
 
   /** Restores the variable current value to the saved one */
   def restoreValue(): Unit
+
+  def makeStoreIndependent: StoreIndependentSavedValue
 }

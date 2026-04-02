@@ -1,15 +1,28 @@
-package oscar.cbls.test.invBench
+// OscaR is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 2.1 of the License, or
+// (at your option) any later version.
+//
+// OscaR is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License  for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License along with OscaR.
+// If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+
+package oscar.cbls.util.invBench
 
 import org.scalacheck.Gen
 
-/** This class holds the internal state of a SeqVariable.
+/** This class holds the internal state of a [[oscar.cbls.core.computation.seq.SeqVariable]].
   *
-  * It is used to determine the applicable movements given this State.
+  * It is used to determine the applicable movements given this state.
   *
   * @param id
-  *   The test id of the SeqVariable to which this State is linked
+  *   The test id of the SeqVariable to which this state is linked.
   * @param currentState
-  *   The current State of the SeqVariable
+  *   The current state of the SeqVariable.
   */
 case class SeqVariableState(id: Int, currentState: SeqVariableStackableState, domain: (Int, Int))
     extends VariableState(id) {

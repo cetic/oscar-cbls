@@ -18,10 +18,11 @@ import org.scalatest.matchers.must.Matchers
 import oscar.cbls._
 import oscar.cbls.core.search.{MoveFound, NoMoveFound}
 import oscar.cbls.lib.neighborhoods.DoIt
+import oscar.cbls.lib.neighborhoods.combinator.AcceptAll
 
 class DoItTests extends AnyFunSuite with Matchers {
 
-  test("DoIt works as expected") {
+  test("DoIt does not accept objective worsening") {
     implicit val m: Model = model("Do it tests")
     val a                 = intVar(5, 0, 10)
     val b                 = intVar(3, 0, 10)
@@ -29,6 +30,20 @@ class DoItTests extends AnyFunSuite with Matchers {
     m.close()
 
     val search = DoIt(m.store, () => a := 10)
+    val move = search.getMove(obj)
+
+    move mustBe NoMoveFound
+  }
+
+  test("DoIt accepts objective worsening when used with acceptAll") {
+    implicit val m: Model = model("Do it tests")
+    val a                 = intVar(5, 0, 10)
+    val b                 = intVar(3, 0, 10)
+    val obj               = m.minimize(a + b)
+    m.close()
+
+    val search = AcceptAll(DoIt(m.store, () => a := 10),allowsConstrainViolation = false)
+
     search.getMove(obj) match {
       case NoMoveFound   => require(requirement = false, "Should not happen")
       case mf: MoveFound => mf.move.commit()
@@ -48,5 +63,33 @@ class DoItTests extends AnyFunSuite with Matchers {
 
     val search = DoIt(m.store, () => a := 10)
     noException mustBe thrownBy(search.doAllMoves(obj, _ >= 3))
+
+    val moves = search.getAllMoves(obj,_>= 3)
+    moves.length mustBe(0)
+
+    val searchAcceptAll = AcceptAll(DoIt(m.store,() => a := 10), allowsConstrainViolation = false)
+    val movesAcceptAll = searchAcceptAll.getAllMoves(obj,_ >= 3)
+    movesAcceptAll.length mustBe 3
   }
+
+  test("DoIt allows constraint violation according to the accept all value") {
+    implicit val m: Model = model("Do it tests")
+    val a                 = intVar(5, 0, 10)
+    val b                 = intVar(3, 0, 10)
+    m.addConstraint(a leq 9)
+    val obj = m.minimize(a + b)
+    m.close()
+
+    val search = AcceptAll(DoIt(m.store, () => a := 10),allowsConstrainViolation = false)
+    search.getMove(obj) must be(NoMoveFound)
+
+    val searchAcceptAll = AcceptAll(DoIt(m.store, () => a := 10),allowsConstrainViolation = true)
+    searchAcceptAll.getMove(obj) match {
+      case NoMoveFound   => require(requirement = false, "Should not happen")
+      case mf: MoveFound => mf.move.commit()
+    }
+    a.value() must be(10)
+
+  }
+
 }

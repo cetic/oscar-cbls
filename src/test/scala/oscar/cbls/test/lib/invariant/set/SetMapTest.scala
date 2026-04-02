@@ -14,19 +14,18 @@
 package oscar.cbls.test.lib.invariant.set
 
 import org.scalatest.funsuite.AnyFunSuite
-import oscar.cbls.core.computation.Store
-import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.set.SetMap
-import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBench, TestBenchSut}
 
 class SetMapTest extends AnyFunSuite {
 
   test("SetMap invariant is correct") {
-    def createSetMap(model: Store): TestBenchSut = {
-      val input  = SetVariable(model, Set.empty)
+    def createSetMap(model: Model): TestBenchSut = {
+      val input  = model.setVar(Set.empty, -1000, 1000)
       val fun    = (x: Int) => x * x
-      val output = SetVariable(model, Set.empty)
-      val inv    = SetMap(model, input, fun, output)
+      val output = model.setVar(Set.empty, 0, Int.MaxValue)
+      val inv    = SetMap(model.store, input, fun, output)
 
       TestBenchSut(inv, Array(input), Array(output))
     }

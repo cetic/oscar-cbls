@@ -19,7 +19,8 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.logic.SetElement
-import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBench, TestBenchSut}
 
 class SetElementTestSuite extends AnyFunSuite with Matchers {
 
@@ -30,7 +31,7 @@ class SetElementTestSuite extends AnyFunSuite with Matchers {
     val input: Array[SetVariable] = values.map(s => SetVariable(store, s))
     val index: IntVariable        = IntVariable(store, 2)
     val output: SetVariable       = SetVariable(store, Set.empty)
-    val inv: SetElement           = SetElement(store, input, index, output, bulkUsed = false)
+    val inv: SetElement           = SetElement(store, input, index, output)
     store.close()
 
     (store, input, index, output, inv)
@@ -82,13 +83,12 @@ class SetElementTestSuite extends AnyFunSuite with Matchers {
   }
 
   test("SetElement: test bench") {
-    def createSetElement(model: Store): TestBenchSut = {
+    def createSetElement(model: Model): TestBenchSut = {
       val nbValues = 1000
-      val input    = Array.fill(nbValues)(SetVariable(model, Set.empty))
-      val index    = IntVariable(model, 0)
-      index.setDomain(0, nbValues - 1)
-      val output = SetVariable(model, Set.empty)
-      val inv    = SetElement(model, input, index, output, bulkUsed = false)
+      val input    = Array.fill(nbValues)(model.setVar(Set.empty, Int.MinValue, Int.MaxValue))
+      val index    = model.intVar(0, 0, nbValues - 1)
+      val output   = model.setVar(Set.empty, Int.MinValue, Int.MaxValue)
+      val inv      = SetElement(model.store, input, index, output)
 
       TestBenchSut(inv, index +: input, Array(output))
     }

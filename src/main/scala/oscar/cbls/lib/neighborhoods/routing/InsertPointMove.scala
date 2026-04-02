@@ -15,6 +15,7 @@ package oscar.cbls.lib.neighborhoods.routing
 
 import oscar.cbls.algo.sequence.IntSequenceExplorer
 import oscar.cbls.core.computation.seq.SeqVariable
+import oscar.cbls.core.distributed.computation.{SearchConnector, StoreIndependentMove}
 import oscar.cbls.core.search.Move
 
 /** Move which inserts a new value in a [[oscar.cbls.core.computation.seq.SeqVariable]].
@@ -38,17 +39,52 @@ case class InsertPointMove(
   override val neighborhoodName: String
 ) extends Move(objValueAfter, neighborhoodName) {
 
-  override def commit(): Unit = seq.insertAfterPosition(nodeToInsert, insertAfterPointExplorer)
+  override def commit(): Unit = {
+    if (seq.pendingValue sameIdentity insertAfterPointExplorer.intSequence) {
+      seq.insertAfterPosition(nodeToInsert, insertAfterPointExplorer)
+    } else {
+      seq.insertAfterPosition(
+        nodeToInsert,
+        seq.pendingValue.explorerAtAnyOccurrence(insertAfterPointExplorer.value).get
+      )
+    }
+  }
 
   override def toString: String = {
     s"InsertPointMove: Insert unrouted node $nodeToInsert after " +
       s"node ${insertAfterPointExplorer.value} in sequence\n$seq" + super.toString
   }
 
-  override def regularize(): Move = {
-    val regularizedInsertPointExp =
-      seq.pendingValue.explorerAtAnyOccurrence(insertAfterPointExplorer.value).get
+  override def detachFromStore(searchConnector: SearchConnector): StoreIndependentMove =
+    StoreIndependentInsertPointMove(
+      seq = searchConnector.detachVariable(seq),
+      nodeToInsert,
+      insertAfterValue = insertAfterPointExplorer.value,
+      objValueAfter,
+      neighborhoodName
+    )
+}
 
-    InsertPointMove(seq, nodeToInsert, regularizedInsertPointExp, objValueAfter, neighborhoodName)
-  }
+case class StoreIndependentInsertPointMove(
+  seq: Int,
+  nodeToInsert: Int,
+  insertAfterValue: Int,
+  objValueAfter: Long,
+  neighborhoodName: String
+) extends StoreIndependentMove(objValueAfter) {
+  override def attachMoveToStore(searchConnector: SearchConnector): Move =
+    InsertPointMove(
+      seq = searchConnector.attachSeqVarToStore(seq),
+      nodeToInsert,
+      insertAfterPointExplorer = new IntSequenceExplorer(null) {
+        override def value: Int = insertAfterValue
+        // these methods are intentionally left non-implemented
+        // because they make no sense and are not called anyway.
+        override def position: Int             = throw new Error("should not be called")
+        override def next: IntSequenceExplorer = throw new Error("should not be called")
+        override def prev: IntSequenceExplorer = throw new Error("should not be called")
+      },
+      objValueAfter,
+      neighborhoodName
+    )
 }

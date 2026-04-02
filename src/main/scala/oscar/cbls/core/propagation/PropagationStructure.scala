@@ -123,17 +123,26 @@ class PropagationStructure(debugLevel: Int) {
     @tailrec
     def buildTrackForTargetRec(
       toTreat: List[PropagationElement],
-      track: Array[Boolean]
+      track: Array[Boolean],
+      nbTreatedElements: Int = 0
     ): Array[Boolean] = {
       toTreat match {
         case Nil => track
         case h :: t =>
-          track(h.id) = true
-          val newToTreat = t ::: h.staticallyListenedElements.filter(pe => !track(pe.id))
-          buildTrackForTargetRec(newToTreat, track)
+          assert(
+            nbTreatedElements <= nbPropagationElements,
+            "Computing track elements required more operations than the total number of element" + s" ($nbTreatedElements/$nbPropagationElements) (${toTreat.length})"
+          )
+          val toAdd = h.staticallyListenedElements.distinct.filter(pe => !track(pe.id))
+          toAdd.foreach(pe => track(pe.id) = true)
+          val newToTreat = toAdd ::: t
+          buildTrackForTargetRec(newToTreat, track, nbTreatedElements + 1)
       }
     }
-    buildTrackForTargetRec(List(pe), Array.fill(nbPropagationElements)(false))
+    buildTrackForTargetRec(
+      List(pe),
+      Array.tabulate(nbPropagationElements)(i => if (i == pe.id) true else false)
+    )
   }
 
   /** Computes the propagation layer for the propagation elements of this propagation structure
@@ -192,7 +201,6 @@ class PropagationStructure(debugLevel: Int) {
       }
     }
     computeLayerOfElement(fstLayerElements, List(), 0, nbPropagationElements)
-
   }
 
   /** Registers a propagation element for partial propagation
@@ -282,12 +290,29 @@ class PropagationStructure(debugLevel: Int) {
     // After this propagation and an eventual check, the scheduled elements are filtered using the track
     // (the propagation of an element can create new scheduled elements).
     @tailrec @inline
-    def doPropagation(): Unit = {
+    def doPropagation(currentLayer: Int = -1): Unit = {
       if (executionQueue.nonEmpty) {
-        val currentElement = executionQueue.popFirst().get
-        currentElement.propagateElement()
+        val currentElements = executionQueue.popFirsts()
+        val layer           = currentElements.head.layer
+        if (layer <= currentLayer) {
+          val names = currentElements.map(e =>
+            e match {
+              case v: Variable    => v.name
+              case inv: Invariant => inv.name()
+              case _              => e.id.toString
+            }
+          )
+          require(
+            layer > currentLayer,
+            s"""Propagation did not progress into the layers.
+Propagating elements of layer $layer while propagation was at layer $currentLayer.
+These elements may have forgotten to declare a static link before declaring a dynamic link.
+These elements are ${names.mkString(";")}"""
+          )
+        }
+        currentElements.foreach(_.propagateElement())
         filterScheduledWithTrack()
-        doPropagation()
+        doPropagation(layer)
       }
     }
 
@@ -390,7 +415,7 @@ class PropagationStructure(debugLevel: Int) {
   def namedElement(): Map[Int, String] = {
     def naming(e: PropagationElement): String = {
       e match {
-        case v: Variable       => v.name()
+        case v: Variable       => v.name
         case inv: Invariant    => inv.name()
         case _: IncredibleBulk => "bulk"
         case _                 => e.id.toString

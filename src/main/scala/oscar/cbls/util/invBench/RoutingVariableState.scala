@@ -11,7 +11,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.test.invBench
+package oscar.cbls.util.invBench
 
 import org.scalacheck.Gen
 import oscar.cbls.algo.sequence.IntSequence
@@ -234,9 +234,9 @@ case class RoutingVariableState(
   /** Returns the route of the input vehicle, not including the return to the depot.
     *
     * @param vehicle
-    *   The vehicle for which the route is required
+    *   The vehicle for which the route is required.
     * @return
-    *   The list of node that are in the vehicle route
+    *   The list of node that are in the vehicle route.
     */
   private def routeOfVehicle(vehicle: Int): List[Int] = {
     var currentVehicleExplorer = routes.explorerAtAnyOccurrence(vehicle).get.next

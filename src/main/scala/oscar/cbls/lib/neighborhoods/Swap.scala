@@ -220,7 +220,7 @@ class Swap(
 
           // Check if swapping firstVar and SecondVar improves the objective
           exploration.checkNeighborWP(objValue =>
-            SwapMove(firstVar, secondVar, objValue, this.name)
+            SwapMove(firstVar, indexOfFirstVariable, secondVar, secondIndex, objValue, this.name)
           )
           // Rollbacks the move
           firstVar :=: secondVar

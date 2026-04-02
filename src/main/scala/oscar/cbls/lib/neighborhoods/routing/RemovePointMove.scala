@@ -35,15 +35,16 @@ case class RemovePointMove(
   override val neighborhoodName: String
 ) extends Move(objValueAfter, neighborhoodName) {
 
-  override def commit(): Unit = seq.remove(removedPointExplorer)
+  override def commit(): Unit = {
+    if (seq.pendingValue sameIdentity removedPointExplorer.intSequence) {
+      seq.remove(removedPointExplorer)
+    } else {
+      val reguRemovedPointExplorer =
+        seq.pendingValue.explorerAtAnyOccurrence(removedPointExplorer.value).get
+      seq.remove(reguRemovedPointExplorer)
+    }
+  }
 
   override def toString: String =
     s"RemovePointMove: remove node ${removedPointExplorer.value}. " + super.toString
-
-  override def regularize(): Move = {
-    val reguRemovedPointExplorer =
-      seq.pendingValue.explorerAtAnyOccurrence(removedPointExplorer.value).get
-
-    RemovePointMove(seq, reguRemovedPointExplorer, objValueAfter, neighborhoodName)
-  }
 }

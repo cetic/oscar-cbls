@@ -27,30 +27,21 @@ import oscar.cbls.core.search.Move
   *   The name of this move.
   */
 case class CompositeMove(
-  leftMove: Move,
-  rightMove: Move,
-  override val objValueAfter: Long,
-  compositeNeighborhoodName: String
+                          leftMove: Move,
+                          rightMove: Move,
+                          override val objValueAfter: Long,
+                          compositeNeighborhoodName: String
 ) extends Move(objValueAfter, compositeNeighborhoodName) {
 
   /** Commits this move. */
   override def commit(): Unit = {
     leftMove.commit()
-    rightMove.regularize().commit()
+    rightMove.commit()
   }
 
   override def toString: String = {
     val leftWithoutObj  = leftMove.toString.split("objValue after").head
     val rightWithoutObj = rightMove.toString.split("objValue after").head
     s"Composite move [$leftWithoutObj and then $rightWithoutObj] objValue after $objValueAfter"
-  }
-
-  override def regularize(): Move = {
-    CompositeMove(
-      leftMove.regularize(),
-      rightMove.regularize(),
-      objValueAfter,
-      compositeNeighborhoodName
-    )
   }
 }

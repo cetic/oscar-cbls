@@ -11,15 +11,15 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.test.invBench
+package oscar.cbls.util.invBench
 
 import oscar.cbls.algo.sequence.IntSequence
 
 import scala.collection.immutable.HashSet
 
-/** Stackable state of a SeqVariable
+/** Stackable state of a [[oscar.cbls.core.computation.seq.SeqVariable]].
   *
-  * '''Notes:'''
+  * @note
   *   - The fact that this class is stackable eases the checkpoint management.
   *   - `previousStackableUnrouted` and `previousStackableRouted` are only used to manage checkpoint
   *     with routing problems.
@@ -32,10 +32,10 @@ case class SeqVariableStackableState(
   previousStackableRouted: Option[IntSequence] = None
 ) {
 
-  /** Returns the checkpoint level of the [[oscar.cbls.core.computation.seq.SeqVariable]]
+  /** Returns the checkpoint level of the [[oscar.cbls.core.computation.seq.SeqVariable]].
     *
     * @return
-    * -1 if no checkpoint define. >= 0 otherwise
+    * -1 if no checkpoint defined, >= 0 otherwise.
     */
   def seqCheckpointLevel: Int = {
     previousStackableState match {
@@ -44,7 +44,9 @@ case class SeqVariableStackableState(
     }
   }
 
-  /** Returns a copy of this SeqVariableStackableState with a new move and eventually a new size */
+  /** Returns a copy of this [[SeqVariableStackableState]] with a new move, and eventually a new
+    * size.
+    */
   def pushOp(newSeqSize: Option[Int] = None): SeqVariableStackableState = {
     SeqVariableStackableState(
       newSeqSize.getOrElse(seqSize),

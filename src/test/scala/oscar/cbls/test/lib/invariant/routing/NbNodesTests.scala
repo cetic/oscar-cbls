@@ -18,8 +18,9 @@ import org.scalatest.matchers.must.Matchers
 import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.{Store, Variable}
 import oscar.cbls.lib.invariant.routing.NbNodes
+import oscar.cbls.modeling.Model
 import oscar.cbls.modeling.routing.VRS
-import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
+import oscar.cbls.util.invBench.{InvTestBench, TestBenchSut}
 
 class NbNodesTests extends AnyFunSuite with Matchers {
 
@@ -66,8 +67,8 @@ class NbNodesTests extends AnyFunSuite with Matchers {
     val n = 25
     val v = 5
 
-    def createInv(model: Store): TestBenchSut = {
-      val vrs                     = VRS(model, n, v)
+    def createInv(model: Model): TestBenchSut = {
+      val vrs                     = model.vrs(n, v)
       val inv                     = NbNodes(vrs)
       val output: Array[Variable] = Array.from(inv())
       TestBenchSut(inv, Array(vrs.routes), output, Some(vrs))

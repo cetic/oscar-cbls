@@ -11,12 +11,13 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.test.invBench
+package oscar.cbls.test.modeling.routing
 
 import org.scalatest.funsuite.AnyFunSuite
 import oscar.cbls.core.computation.seq.{SeqNotificationTarget, SeqUpdate, SeqVariable}
 import oscar.cbls.core.computation.{Invariant, Store, Variable}
-import oscar.cbls.modeling.routing.VRS
+import oscar.cbls.modeling.Model
+import oscar.cbls.util.invBench.{InvTestBench, TestBenchSut}
 
 class RoutingTestBench extends AnyFunSuite {
 
@@ -36,9 +37,9 @@ class RoutingTestBench extends AnyFunSuite {
   }
 
   test("Routing test bench generates only valid moves") {
-    def createVRS(store: Store): TestBenchSut = {
-      val vrs: VRS = VRS(store, 100, 10, debug = true)
-      val inv      = new DummyRoutingInvariant(store, vrs.routes)
+    def createVRS(model: Model): TestBenchSut = {
+      val vrs = model.vrs(100, 10, debug = true)
+      val inv = new DummyRoutingInvariant(model.store, vrs.routes)
 
       TestBenchSut(inv, Array(vrs.routes), Array.empty[Variable], Some(vrs))
     }

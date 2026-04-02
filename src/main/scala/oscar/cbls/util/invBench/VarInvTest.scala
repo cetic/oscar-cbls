@@ -1,4 +1,17 @@
-package oscar.cbls.test.invBench
+// OscaR is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 2.1 of the License, or
+// (at your option) any later version.
+//
+// OscaR is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License  for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License along with OscaR.
+// If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+
+package oscar.cbls.util.invBench
 
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
@@ -10,13 +23,11 @@ import oscar.cbls.modeling.routing.VRS
 
 import scala.collection.immutable.HashSet
 
-/** The class that defines the moves on the variables. Each type of variable have at least one type
-  * of move
+/** Class defining the moves on the variables. Each type of variable has at least one type of move.
   *
   * @param varId
-  *   The id of the variable
+  *   The id of the variable.
   */
-
 abstract class VariableMove(val varId: Int) {
 
   def mkMove(testVar: Variable): Unit
@@ -24,18 +35,17 @@ abstract class VariableMove(val varId: Int) {
   def updateState(state: VariableState): VariableState
 }
 
-/** The class that contains the states of the variable.
+/** Class containing the states of the variable.
   *
   * The state is able to:
   *   - Know if a move can be done (according to the current state and the domain for the variables
-  *     that have a domain)
+  *     that have a domain).
   *   - Generate a move (according to the current state and the domain for the variables that have a
-  *     domain
+  *     domain.
   *
   * @param id
-  *   The id of the variable
+  *   The id of the variable.
   */
-
 abstract class VariableState(id: Int) {
   def generateMove(): Gen[VariableMove]
 
@@ -81,5 +91,4 @@ object VariableState {
         }
     }
   }
-
 }

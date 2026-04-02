@@ -18,11 +18,6 @@ import oscar.cbls.core.computation.Store
 /** Used to create constant SeqVariable
   */
 object SeqConst {
-  private var nextNameCounter: Int = -1
-  private def nextName(): String = {
-    nextNameCounter += 1
-    s"SeqConst_$nextNameCounter"
-  }
 
   /** Creates a constant SeqVariable based on parameters.
     *
@@ -30,23 +25,18 @@ object SeqConst {
     *
     * @param model
     *   The propagation structure to which the element is attached.
-    * @param initialValue
-    *   The initial value of the SeqVariable.
-    * @param name
-    *   The (optional) name of the Variable.
-    * @param maxPivotPerValuePercent
-    *   The maximum number of [[oscar.cbls.algo.sequence.affineFunction.Pivot]] per 100 value in the
-    *   IntSequence. When defining a new checkpoint, if this value is exceeded, a regularization is
-    *   done.
+    * @param value
+    *   The value of the SeqConst.
     * @return
     *   A SeqVariable with the constant flag at true.
     */
-  def apply(
-    model: Store,
-    initialValue: List[Int],
-    name: String = nextName(),
-    maxPivotPerValuePercent: Int = 4
-  ): SeqVariable = {
-    SeqVariable(model, initialValue, name, maxPivotPerValuePercent, isConstant = true)
+  def apply(model: Store, value: List[Int]): SeqVariable = {
+    SeqVariable(
+      model,
+      value,
+      "SeqConstant(" + value.mkString(",") + ")",
+      maxPivotPerValuePercent = 1,
+      isConstant = true
+    )
   }
 }

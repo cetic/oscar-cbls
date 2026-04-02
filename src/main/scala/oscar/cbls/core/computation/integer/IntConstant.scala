@@ -23,12 +23,12 @@ object IntConstant {
     * Since it's a constant, invoking methods that attempt to change its value will throw an
     * exception.
     *
-    * @param model
+    * @param store
     *   The [[oscar.cbls.core.computation.Store]] to which this variable is linked.
     * @param value
     *   The value of this constant variable.
     */
-  def apply(model: Store, value: Long): IntConstant = new IntConstant(model, value)
+  def apply(store: Store, value: Long): IntConstant = new IntConstant(store, value)
 }
 
 /** A constant IntVariable.
@@ -36,12 +36,13 @@ object IntConstant {
   * Since it's a constant, invoking methods that attempt to change its value will throw an
   * exception.
   *
-  * @param model
+  * @param store
   *   The [[oscar.cbls.core.computation.Store]] to which this variable is linked.
   * @param value
   *   The value of this constant variable.
   */
-class IntConstant(model: Store, value: Long) extends IntVariable(model, value, true) {
+class IntConstant(store: Store, value: Long)
+    extends IntVariable(store, value, true, givenNameOpt = Some(s"IntConstant($value)")) {
   override protected def setValue(value: Long): Unit = {
     require(requirement = false, "The value of a constant variable can not be changed")
   }

@@ -31,13 +31,13 @@ import oscar.cbls.core.propagation._
   *   - ... do some computation and SCHEDULE the invariant FOR PROPAGATION. In that case you need to
   *     override performPropagation()
   *
-  * @param propagationStructure
+  * @param store
   *   The propagation structure to which the element is attached
   * @param name
   *   The (optional) name of the Invariant.
   */
-abstract class Invariant(val model: Store, name: Option[String] = None)
-    extends PropagationElement(model) {
+abstract class Invariant(val store: Store, name: Option[String] = None)
+    extends PropagationElement(store) {
 
   /** Registers an IncredibleBulk (a bulk/set of [[oscar.cbls.core.computation.Variable]]) as
     * listened by this Invariant

@@ -61,7 +61,9 @@ object WLPAdvancedModelingExample {
       deliveryPoints,
       warehousesPositions ++ deliveryPositions,
       openFacilities,
-      obj.objValue
+      obj.objValue,
+      height = 800,
+      width = 800
     )
 
     val searchWithVisu = Nrs.combinator.updateDisplay(search, visu)
