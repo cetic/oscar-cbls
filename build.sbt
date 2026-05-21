@@ -1,13 +1,32 @@
 ThisBuild / scalaVersion  := "2.13.17"
-ThisBuild / organization  := "oscar"
-ThisBuild / version       := sys.props.getOrElse("version", "latest")
+ThisBuild / organization  := "be.cetic"
 ThisBuild / versionScheme := Some("early-semver")
 
 val pekkoVersion = "1.4.0"
 
+// Maven central metadata
+ThisBuild / homepage := Some(url("https://github.com/cetic/oscar-cbls"))
+ThisBuild / licenses := List("LGPL-3.0" -> url("https://www.gnu.org/licenses/lgpl-3.0.en.html"))
+ThisBuild / developers := List(
+  Developer(
+    id    = "cetic",
+    name  = "CETIC",
+    email = "info@cetic.be",
+    url   = url("https://www.cetic.be")
+  )
+)
+ThisBuild / scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/cetic/oscar-cbls"),
+    "scm:git@github.com:cetic/oscar-cbls.git"
+  )
+)
+ThisBuild / sonatypeCredentialHost := "central.sonatype.com"
+
 lazy val oscarCbls = (project in file("."))
   .enablePlugins(PackPlugin)
   .settings(
+    name := "oscar-cbls",
     licenses += ("LGPL-3.0", url("https://www.gnu.org/licenses/lgpl-3.0.en.html")),
     // Auto map external jar when possible
     Compile / doc / autoAPIMappings := true,
@@ -22,7 +41,6 @@ lazy val oscarCbls = (project in file("."))
       "-opt:l:inline",
       "-opt-inline-from:oscar.**"
     ) ++ (if (!OscarBuildParameters.enableAssertions) Seq("-Xdisable-assertions") else Seq.empty),
-    name := "oscar-cbls"
   )
   .settings(PackPlugin.packSettings)
   .settings(packGenerateWindowsBatFile := false)
@@ -65,25 +83,3 @@ ThisBuild / activateAssertion := {
 }
 // Links the activateAssertion task to the task test.
 Test / test := ((Test / test) dependsOn activateAssertion).value
-
-////////////////////////////////////////
-// This part is used only for CETIC's internal CI/CD. The user can ignore it.
-
-ThisBuild / publishTo := {
-  val nexus = "https://nexus.cetic.be/"
-  val privateRepo  = "repository/oscar"
-  val publicRepo = "repository/oscar-public"
-
-  val isTag = sys.env.contains("CI_COMMIT_TAG")
-
-  val repo = if (isTag) publicRepo else privateRepo
-  Some("Nexus" at nexus + repo)
-}
-
-ThisBuild / credentials += Credentials(
-  "Sonatype Nexus Repository Manager",
-  "nexus.cetic.be",
-  sys.env.getOrElse("NEXUS_USER", ""),
-  sys.env.getOrElse("NEXUS_PASS", "")
-)
-
