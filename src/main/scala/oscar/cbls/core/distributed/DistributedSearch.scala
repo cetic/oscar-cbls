@@ -1,6 +1,7 @@
 package oscar.cbls.core.distributed
 
 import com.typesafe.config.{Config, ConfigFactory}
+import org.apache.pekko.actor.typed.scaladsl.AskPattern._
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.{ActorRef, ActorSystem}
 import oscar.cbls.Neighborhood
@@ -10,8 +11,10 @@ import oscar.cbls.core.distributed.computation.SearchConnector
 import oscar.cbls.core.distributed.protocol._
 import oscar.cbls.core.distributed.search.TestBehavior
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
+import org.apache.pekko.util.Timeout
+
+import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
+import scala.concurrent.{Await, Future, TimeoutException}
 
 /** This is the entry point for using distributed search.
   */
@@ -589,6 +592,40 @@ class DistributedSearch(
   }
 
   def status: String = supervisor.printTree
+
+  /** Blocks until `nbWorkers` workers are registered to the supervisor, or until `timeout` has
+    * elapsed, whichever comes first.
+    *
+    * This is meant to be called between the creation of the [[DistributedSearch]] and the first
+    * call to `doAllMoves`, when workers are expected to join from other JVMs: the search would
+    * otherwise start with only the workers that happen to be there already.
+    *
+    * Local workers created through [[spawnLocalWorker]] are counted as well, since they register to
+    * the supervisor just like remote ones.
+    *
+    * @param nbWorkers
+    *   the number of registered workers to wait for
+    * @param timeout
+    *   the maximal amount of time to wait
+    * @return
+    *   the number of workers registered to the supervisor when this method returns. It is smaller
+    *   than `nbWorkers` when the timeout elapsed first, so that the caller can decide whether to
+    *   start the search anyway.
+    */
+  def waitForWorkers(nbWorkers: Int, timeout: FiniteDuration = 1.minute): Int = {
+    require(nbWorkers >= 0, s"nbWorkers must be positive, got $nbWorkers")
+    // The supervisor answers by itself when the timeout elapses; the extra delay below only
+    // protects this call against a supervisor that would be gone altogether.
+    implicit val system: ActorSystem[MessageToSupervisor] = supervisor
+    implicit val askTimeout: Timeout                      = Timeout(timeout + 10.seconds)
+    val answer: Future[WorkersAvailable] =
+      supervisor.ask[WorkersAvailable](answerTo => WaitForWorkers(nbWorkers, timeout, answerTo))
+    try {
+      Await.result(answer, askTimeout.duration).nbWorkers
+    } catch {
+      case _: TimeoutException => 0 // the supervisor did not answer at all
+    }
+  }
 
   /** Shut down the distributed search framework, telling all workers to shut down. Useless in case
     * of single-JVM operation if you exit the JVM anyway; but handy when the system operates on

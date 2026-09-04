@@ -415,7 +415,7 @@ class PopulationBasedSearch[D](
 
     if (verbosityLevel >= 1) {
       println(s"Final population populationSize: ${currentSolutions.size}  obj: [${currentSolutions
-          .map(i => "" + i.obj + "(ex: " + i.ancestor.map(_.obj).getOrElse(startObj) + ")")
+          .map(i => s"${i.obj}(ex: ${i.ancestor.map(_.obj).getOrElse(startObj)})")
           .mkString(", ")}]")
     }
 
@@ -601,9 +601,9 @@ class PopulationBasedSearch[D](
 
     if (verbosityLevel >= 3) {
       println(
-        "PopulationBasedSearch: sortedSolutionsBestFirst: " + sortedSolutionsByIncreasingObj
+        s"PopulationBasedSearch: sortedSolutionsBestFirst: ${sortedSolutionsByIncreasingObj
           .map(_.obj)
-          .mkString(", ")
+          .mkString(", ")}"
       )
     }
     var toReturn: List[Individual] = Nil
@@ -632,8 +632,7 @@ class PopulationBasedSearch[D](
         toReturn = toReturn.reverse
         if (verbosityLevel >= 3) {
           println(
-            "PopulationBasedSearch: removed " + nbFiltered + " identical solutions and selected "
-              + toReturn.size + " best ones: [" + toReturn.map(i => i.obj).mkString(", ") + "]"
+            s"PopulationBasedSearch: removed $nbFiltered identical solutions and selected ${toReturn.size} best ones: [${toReturn.map(i => i.obj).mkString(", ")}]"
           )
         }
         toReturn

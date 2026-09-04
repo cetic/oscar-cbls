@@ -25,7 +25,7 @@ still presents the key concepts and may be useful to understand the way OscaR is
 
 ## Build
 
-OscaR.cbls was developed in Scala 2.13.14 (check `build.sbt`), built with SBT 1.9.9
+OscaR.cbls was developed in Scala 2.13.17 (check `build.sbt`), built with SBT 1.9.9
 (check `project/built.properties`) and run with Java 21.
 
 You can use other combinations of compatible versions as mentioned in

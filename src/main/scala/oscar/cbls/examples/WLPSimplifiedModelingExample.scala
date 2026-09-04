@@ -9,8 +9,6 @@ import oscar.cbls.algo.generator.WarehouseLocationGenerator
 // GUI
 import oscar.cbls.visual.cartesian.wlp.WLPInterface
 
-import scala.io.StdIn
-
 object WLPSimplifiedModelingExample {
   def main(args: Array[String]): Unit = {
 
@@ -81,7 +79,7 @@ object WLPSimplifiedModelingExample {
     println(s"Number of open facilities: ${openFacilities.value().size}")
     println(s"Best objective: ${obj.objValue}")
 
-    // May be necessary to keep the display alive depending on your platform
-    StdIn.readLine()
+    // Keeps the window alive until the user closes it
+    visu.waitForClosing()
   }
 }

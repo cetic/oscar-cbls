@@ -17,12 +17,20 @@ import scalafx.scene.paint.Color
 
 import scala.util.Random
 
-/** Generates pseudo-random Color.
+/** Generates Colors evenly spaced around the hue wheel (HSB color space), so that a fixed number of
+  * colors are mutually well-contrasted.
   *
-  * For the same amount of color needed, the returned array will always contain the same colors but
-  * in a different order.
+  * Hues are laid out starting from a fixed base hue then spaced evenly by 360° / number,
+  * guaranteeing the maximum possible minimum angular distance between any two of the generated
+  * colors' hues.
   */
 object ColorGenerator {
+  // Starting hue, in degrees (0 = red). The exact value doesn't affect contrast — saturation and
+  // brightness do — so a fixed anchor is enough; no need for run-to-run randomness here.
+  private final val BASE_HUE_DEGREES: Double   = 0.0
+  private final val DEFAULT_SATURATION: Double = 0.85
+  private final val DEFAULT_BRIGHTNESS: Double = 0.85
+
   private val randomValueGenerator = new Random()
 
   /** Sets the seed of random generator
@@ -31,15 +39,35 @@ object ColorGenerator {
     */
   def setSeed(seed: Long): Unit = randomValueGenerator.setSeed(seed)
 
-  /** Generates an array of random colors with a fixed size and opacity.
+  /** Generates an array of colors, evenly spaced around the hue wheel so that any two of them are
+    * maximally distinguishable, with a fixed saturation/brightness.
     *
     * @param number
     *   The number of colors to generate.
     * @param alpha
     *   The opacity level, between 0 and 1.
+    * @param saturation
+    *   The HSB saturation of the generated colors, between 0 and 1. Defaults to a value suited for
+    *   a white background.
+    * @param brightness
+    *   The HSB brightness of the generated colors, between 0 and 1. Defaults to a value suited for
+    *   a white background.
     * @return
     *   The array of colors.
     */
+  def generateContrastingColors(
+    number: Int,
+    alpha: Float = 1.0f,
+    saturation: Double = DEFAULT_SATURATION,
+    brightness: Double = DEFAULT_BRIGHTNESS
+  ): Array[Color] = {
+    val hueStep = 360.0 / number
+    Array.tabulate(number) { i =>
+      val hue = (BASE_HUE_DEGREES + i * hueStep) % 360.0
+      Color.hsb(hue, saturation, brightness, alpha)
+    }
+  }
+
   def generateRandomColors(number: Int, alpha: Float = 1.0f): Array[Color] = {
     Array.fill(number)(
       Color(

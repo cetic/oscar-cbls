@@ -74,6 +74,8 @@ class OscarCblsKryoInitializer extends DefaultKryoInitializer {
     kryo.register(classOf[CancelAllMyRemainingTasks])
     kryo.register(classOf[GetNewUniqueTaskIds])
     kryo.register(classOf[SpawnLocalWorker])
+    kryo.register(classOf[WaitForWorkers])
+    kryo.register(classOf[WorkersAvailable])
 
     // =====================================================
     // Protocol Messages - MessageToSearch hierarchy

@@ -8,6 +8,7 @@ import oscar.cbls.core.distributed.protocol._
 import oscar.cbls.core.distributed.search.TestBehavior
 
 import scala.annotation.tailrec
+import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
 
 /** The supervisor actor that distributed the tasks among the available worker. IT also offers a few
@@ -90,7 +91,9 @@ class Supervisor(
     terminatedWorkerNodes: Set[ActorRef[MessageToWorkerNode]] = Set.empty,
     nextTaskId: Long = 0,
     nextSearchId: Int = 0,
-    nextLocalWorkerId: Int = 0
+    nextLocalWorkerId: Int = 0,
+    workerWaiters: Map[Long, (Int, ActorRef[WorkersAvailable])] = Map.empty,
+    nextWaiterId: Long = 0
   ) {
 
     def incrementAllocatedWorkerId(): State = this.copy(nextLocalWorkerId = nextLocalWorkerId + 1)
@@ -409,9 +412,81 @@ class Supervisor(
     }
   }
 
+  /** Handles a [[WaitForWorkers]] request: answers right away when enough workers are already
+    * registered, and otherwise keeps the request pending and arms a timeout.
+    */
+  private def doWaitForWorkers(
+    nbWorkersRequested: Int,
+    timeout: FiniteDuration,
+    answerTo: ActorRef[WorkersAvailable],
+    state: State,
+    context: ActorContext[MessageToSupervisor]
+  ): State = {
+    val nbRegistered = state.workerStatus.size
+    if (nbRegistered >= nbWorkersRequested) {
+      answerTo ! WorkersAvailable(nbRegistered, enoughWorkers = true)
+      state
+    } else {
+      if (verbosityLevel >= 1)
+        log.info(
+          s"waiting for $nbWorkersRequested workers ($nbRegistered registered so far, " +
+            s"timeout: $timeout)"
+        )
+      val waiterId = state.nextWaiterId
+      context.scheduleOnce(timeout, context.self, WorkerWaitTimeout(waiterId))
+      state.copy(
+        workerWaiters = state.workerWaiters + (waiterId -> ((nbWorkersRequested, answerTo))),
+        nextWaiterId = waiterId + 1
+      )
+    }
+  }
+
+  /** Answers, and forgets, every pending [[WaitForWorkers]] request whose requested number of
+    * workers is now registered. Must be called whenever a worker registers.
+    */
+  private def notifySatisfiedWorkerWaiters(state: State): State = {
+    if (state.workerWaiters.isEmpty) {
+      state
+    } else {
+      val nbRegistered = state.workerStatus.size
+      val (satisfied, stillPending) =
+        state.workerWaiters.partition({ case (_, (nbRequested, _)) => nbRegistered >= nbRequested })
+      satisfied.values.foreach(_._2 ! WorkersAvailable(nbRegistered, enoughWorkers = true))
+      state.copy(workerWaiters = stillPending)
+    }
+  }
+
+  /** Answers a pending [[WaitForWorkers]] request that reached its timeout, reporting the number of
+    * workers that did register, so that the caller can decide what to do.
+    */
+  private def doWorkerWaitTimeout(waiterId: Long, state: State): State = {
+    state.workerWaiters.get(waiterId) match {
+      case None => state // already answered because enough workers registered in time
+      case Some((nbRequested, answerTo)) =>
+        val nbRegistered = state.workerStatus.size
+        if (verbosityLevel >= 1)
+          log.info(
+            s"timeout while waiting for $nbRequested workers; $nbRegistered registered"
+          )
+        answerTo ! WorkersAvailable(nbRegistered, enoughWorkers = nbRegistered >= nbRequested)
+        state.copy(workerWaiters = state.workerWaiters - waiterId)
+    }
+  }
+
+  /** Answers every pending [[WaitForWorkers]] request, whatever the number of registered workers,
+    * so that no caller stays blocked when the supervisor stops.
+    */
+  private def flushWorkerWaiters(state: State): Unit = {
+    val nbRegistered = state.workerStatus.size
+    state.workerWaiters.values.foreach { case (nbRequested, answerTo) =>
+      answerTo ! WorkersAvailable(nbRegistered, enoughWorkers = nbRegistered >= nbRequested)
+    }
+  }
+
   private def doGlobalShutdown(state: State): Behavior[MessageToSupervisor] = {
     if (verbosityLevel >= 1)
       log.info("supervisor got shutdown command")
+    flushWorkerWaiters(state)
     state.workerStatus.foreach(_._1 ! WorkerShutdown(Some("global shutdown")))
     Behaviors.stopped
   }
@@ -520,7 +595,7 @@ class Supervisor(
         log.info(
           "Got worker registration " + fromWorker + " (total workers:" + newState.workerStatus.size + ")"
         )
-      newState
+      notifySatisfiedWorkerWaiters(newState)
     }
   }
 
@@ -540,6 +615,14 @@ class Supervisor(
           case WorkerNodeRegister(workerNode, nbWorkers) =>
             doWorkerNodeRegistration(workerNode, nbWorkers, context)
             Behaviors.same
+
+          case WaitForWorkers(nbWorkersRequested, timeout, answerTo) =>
+            ongoingSearch(
+              doWaitForWorkers(nbWorkersRequested, timeout, answerTo, state, context)
+            )
+
+          case WorkerWaitTimeout(waiterId) =>
+            ongoingSearch(doWorkerWaitTimeout(waiterId, state))
 
           case SpawnLocalWorker(searchStructure, testBehaviorOpt) =>
             ongoingSearch(doSpanNewWorker(state, searchStructure, context, testBehaviorOpt))
@@ -799,6 +882,12 @@ class Supervisor(
             doWorkerNodeRegistration(workerNode, nbWorkers, context)
             Behaviors.same
 
+          case WaitForWorkers(nbWorkersRequested, timeout, answerTo) =>
+            idle(doWaitForWorkers(nbWorkersRequested, timeout, answerTo, state, context))
+
+          case WorkerWaitTimeout(waiterId) =>
+            idle(doWorkerWaitTimeout(waiterId, state))
+
           case SpawnLocalWorker(searchStructure, testBehaviorOpt) =>
             idle(doSpanNewWorker(state, searchStructure, context, testBehaviorOpt))
 
@@ -919,6 +1008,7 @@ class Supervisor(
     workerCrash: WorkerCrash,
     state: State
   ): Behavior[MessageToSupervisor] = {
+    flushWorkerWaiters(state)
     Behaviors.receive { (context, command) =>
       try {
         command match {
@@ -941,6 +1031,14 @@ class Supervisor(
           case command: Command =>
             command.from ! Crash(workerCrash.error)
             Behaviors.stopped
+          case WaitForWorkers(nbWorkersRequested, _, answerTo) =>
+            // the whole system is going down; answer at once so that the caller does not block
+            val nbRegistered = state.workerStatus.size
+            answerTo ! WorkersAvailable(nbRegistered, nbRegistered >= nbWorkersRequested)
+            Behaviors.same
+          case WorkerWaitTimeout(_) =>
+            // the pending requests have all been answered when entering this state
+            Behaviors.same
           case _: SpawnLocalWorker =>
             // ignore
             Behaviors.same

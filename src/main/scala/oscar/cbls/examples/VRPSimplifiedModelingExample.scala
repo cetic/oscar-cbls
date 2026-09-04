@@ -16,7 +16,7 @@ object VRPSimplifiedModelingExample {
     val m = Cbls.model("VRP example")
 
     // Generating random data
-    val nbNodes    = 100
+    val nbNodes    = 125
     val nbVehicles = 5
     val (nodesCoordinate, distanceMatrix, unroutedPenalty, _) =
       RoutingGenerator.generateRandomRoutingData(nbNodes, 2, 0)
@@ -85,7 +85,7 @@ object VRPSimplifiedModelingExample {
     println(vrs)
     println(s"Best objective: ${obj.objValue}\n")
 
-    // May be necessary to keep the display alive depending on your platform
-//    StdIn.readLine()
+    // Keeps the window alive until the user closes it
+    visu.waitForClosing()
   }
 }

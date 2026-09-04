@@ -87,16 +87,10 @@ class RoutingGeneratorTestSuite extends AnyFunSuite with Matchers {
     val rng       = new Random(seed)
     val center    = RoutingGenerator.centerDepot
 
-    val nodes = RoutingGenerator.evenlySpacedNodes(numNodes, 1, nodesDist, center, rng)
-
     withClue(s"Seed: $seed\n") {
-      nodes should have length 9
-      // Nodes are generated from the center and evenly spaced. So the modulo of their coordinate
-      // must be the same as the modulo of the center.
-      for (n <- nodes) {
-        n._1 % nodesDist should equal(center._1 % nodesDist)
-        n._2 % nodesDist should equal(center._2 % nodesDist)
-      }
+      an[IllegalArgumentException] mustBe thrownBy(
+        RoutingGenerator.evenlySpacedNodes(numNodes, 1, nodesDist, center, rng)
+      )
     }
   }
 

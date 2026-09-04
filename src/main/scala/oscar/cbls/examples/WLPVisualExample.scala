@@ -6,8 +6,6 @@ import oscar.cbls.visual.cartesian.wlp.WLPInterface
 
 import oscar.cbls.modeling.{Invariants => Inv, Neighborhoods => Nbrs}
 
-import scala.io.StdIn
-
 object WLPVisualExample {
   def main(args: Array[String]): Unit = {
     // Problem instance parameters
@@ -70,7 +68,7 @@ object WLPVisualExample {
     search.doAllMoves(obj)
     println(s"Best objective: ${obj.objValue}")
 
-    // May be necessary to keep the display alive depending on your platform
-    StdIn.readLine()
+    // Keeps the window alive until the user closes it
+    wlpInterface.waitForClosing()
   }
 }

@@ -37,14 +37,23 @@ final case class GetMove(
   * @param startSolution
   *   The solution that must be loaded before exploring the neighborhood
   * @param objective
-  *   The objective to be given to the [[oscar.cbls.Neighborhood]]
+  *   The objective to be given to the [[oscar.cbls.Neighborhood]]; this is the one and only
+  *   objective that drives the exploration. It is up to the search procedure that creates this
+  *   task to decide which objective this is.
   * @param sendProgressToOPt
   *   An optional reference to an actor that can receive progress report messages
+  * @param objectiveToMeasureOpt
+  *   An optional second objective that does '''not''' drive the exploration. When present, it is
+  *   simply evaluated on the solution reached at the end of the exploration, and its value is
+  *   reported back alongside the value of `objective`. This is handy for search procedures that
+  *   let the workers optimize a surrogate objective while still keeping track of the value of the
+  *   objective of the overall problem.
   */
 final case class DoAllMoves(
   startSolution: StoreIndependentSolution,
   objective: StoreIndependentObjective,
-  sendProgressToOPt: Option[ActorRef[ProgressReport]]
+  sendProgressToOPt: Option[ActorRef[ProgressReport]],
+  objectiveToMeasureOpt: Option[StoreIndependentObjective] = None
 ) extends TaskParameters
 
 /** A progress report describing the progression of a [[DoAllMoves]] task

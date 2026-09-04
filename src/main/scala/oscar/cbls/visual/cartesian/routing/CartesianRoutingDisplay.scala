@@ -23,6 +23,7 @@ import oscar.cbls.visual.cartesian.routing.layers.{
   RoutingRouteCartesianLayer
 }
 import oscar.cbls.visual.{OscaRDisplay, OscaRPrimaryStage}
+import scalafx.application.Platform
 import scalafx.scene.Scene
 import scalafx.scene.paint.Color.White
 
@@ -91,6 +92,15 @@ class CartesianRoutingDisplay(
   /** Redraws all graphical items that needs to be redrawn. */
   override def redraw(solution: Solution): Unit = {
     panes.foreach(_.redraw(solution))
+    // The panes' own redraw() defers actual shape mutation to the JavaFX Application Thread (via
+    // Platform.runLater), so this scene rebuild must be deferred too, and scheduled after those
+    // pending updates so it picks up the freshly computed shapes.
+    Platform.runLater {
+      scene = new Scene(myWidth.toDouble, myHeight.toDouble) {
+        fill = White
+        content = panes.flatMap(_.listOfShapes)
+      }
+    }
   }
 
   override def init(): Unit = {

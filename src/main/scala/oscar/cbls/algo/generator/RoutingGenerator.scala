@@ -59,9 +59,9 @@ object RoutingGenerator {
     n: Int,
     weightFactorForUnroutedNodes: Long,
     maxCostForUsingVehicle: Long,
-    seed: Long = Random.nextLong()
+    seed: Option[Long] = None
   ): (Array[(Long, Long)], Array[Array[Long]], Long, Long) = {
-    val rng          = new Random(seed)
+    val rng          = seed.map(new Random(_)).getOrElse(new Random())
     val pos          = randomNodes(n, rng)
     val dist         = distancesMatrix(pos)
     val unroutedCost = costForUnroutedNodes(dist, weightFactorForUnroutedNodes, rng)
@@ -93,6 +93,9 @@ object RoutingGenerator {
     *   1. A distances matrix.
     *   1. The cost for unrouted nodes.
     *   1. A cost for using a new vehicle.
+    * @note
+    *   If `n` and `nodeDistance` are too big considering the map's bounds, this generator cannot
+    *   guarentee to generate exactly `n` nodes. In that case, an error is thrown.
     */
   def generateEvenlySpacedRoutingData(
     n: Int,
@@ -100,9 +103,9 @@ object RoutingGenerator {
     weightFactorForUnroutedNodes: Long,
     maxCostForUsingVehicle: Long,
     nodeDistance: Long,
-    seed: Long = Random.nextLong()
+    seed: Option[Long] = None
   ): (Array[(Long, Long)], Array[Array[Long]], Long, Long) = {
-    val rng          = new Random(seed)
+    val rng          = seed.map(new Random(_)).getOrElse(new Random())
     val depot        = centerDepot
     val pos          = evenlySpacedNodes(n, v, nodeDistance, depot, rng)
     val dist         = distancesMatrix(pos)
@@ -145,9 +148,9 @@ object RoutingGenerator {
     clusterSize: Int,
     weightFactorForUnroutedNodes: Long,
     maxCostForUsingVehicle: Long,
-    seed: Long = Random.nextLong()
+    seed: Option[Long] = None
   ): (Array[(Long, Long)], Array[Array[Long]], Long, Long) = {
-    val rng          = new Random(seed)
+    val rng          = seed.map(new Random(_)).getOrElse(new Random())
     val pos          = clusteredNodes(v, numCluster, nodesByCluster, clusterSize, rng)
     val dist         = distancesMatrix(pos)
     val unroutedCost = costForUnroutedNodes(dist, weightFactorForUnroutedNodes, rng)
@@ -190,9 +193,9 @@ object RoutingGenerator {
     maxLatitude: Double = 45.0,
     minLongitude: Double = -90.0,
     maxLongitude: Double = 90.0,
-    seed: Long = Random.nextLong()
+    seed: Option[Long] = None
   ): (Array[(Double, Double)], Array[Array[Long]], Long, Long) = {
-    val rng = new Random(seed)
+    val rng = seed.map(new Random(_)).getOrElse(new Random())
     // Positions for the nodes + the depot
     val (pos, dist) =
       geographicRandom(n, minLatitude, maxLatitude, minLongitude, maxLongitude, rng)
@@ -284,7 +287,12 @@ object RoutingGenerator {
     nodesPositions.toArray
   }
 
-  /** @param n
+  /** Generates a 2D grid of nodes with uniform spacing.
+    *
+    * "Evenly spaced" means that the distance (step size) between any two consecutive 
+    * adjacent nodes along the X and Y axes remains constant throughout the grid.
+    *
+    * @param n
     *   The number of points (deposits and customers) in the problem.
     * @param v
     *   The number of vehicles / depots to generate.
@@ -295,10 +303,12 @@ object RoutingGenerator {
     * @param rng
     *   The random number generator used to generate values.
     * @return
-    *   An array of nodes two by two distant from `nodeDistance`. The first `v` nodes are supposed
-    *   to be depots. '''WARNING''': If `n` and `nodeDistance` are too big considering the map's
-    *   bounds, this generator cannot guarentee to generate exactly `n` nodes. In that case, the
-    *   generator stops after fulfilling the map.
+    *   An array of tuples representing the 2D (X, Y) coordinates of the generated nodes ordered in a grid layout. The first `v` nodes are supposed
+    *   to be depots.
+    *
+    * @note
+    *   If `n` and `nodeDistance` are too big considering the map's bounds, this generator cannot
+    *   guarentee to generate exactly `n` nodes. In that case, an error is thrown.
     */
   def evenlySpacedNodes(
     n: Int,
@@ -317,17 +327,17 @@ object RoutingGenerator {
     val minusX    = (p: (Long, Long)) => (p._1 - nodeDistance, p._2)
     val plusY     = (p: (Long, Long)) => (p._1, p._2 + nodeDistance)
     val minusY    = (p: (Long, Long)) => (p._1, p._2 - nodeDistance)
-    var translate = mutable.ArraySeq(plusX, minusX, plusY, minusY)
+    var shift = mutable.ArraySeq(plusX, minusX, plusY, minusY)
 
     /** To be admissible, a node must be included in the map bounds and not already exist. */
     def isAdmissibleNode(node: (Long, Long)): Boolean =
       inInterval(node._1, minXY, maxXY) && inInterval(node._2, minXY, maxXY) && !nodesPositions
-        .contains(node) && node != firstDepotPos
+        .contains(node)
 
     /** Tries to find a node which is not encircled by four other nodes. */
     def unblock(): Option[(Long, Long)] = {
       for (node <- nodesPositions) {
-        for (t <- translate) {
+        for (t <- shift) {
           val newNode = t(node)
           if (isAdmissibleNode(newNode)) return Some(newNode)
         }
@@ -336,29 +346,30 @@ object RoutingGenerator {
     }
 
     var i: Int              = 1
-    var translateIndex: Int = 0
-
+    var shiftIndex: Int = 0
     while (i < n) {
-      translate = rng.shuffle(translate)
-      val newNode = translate(translateIndex)(lastNode)
+      if (shiftIndex == 0) shift = rng.shuffle(shift)
+      val newNode = shift(shiftIndex)(lastNode)
       if (isAdmissibleNode(newNode)) { // We can add the new node
         nodesPositions += newNode
         lastNode = newNode
         i += 1
-        translateIndex = 0
-      } else if (translateIndex + 1 < translate.length) { // We need to try another translation
-        translateIndex += 1
-      } else { // We tried all the translations. The last node is blocked by other nodes.
-        unblock() match {
-          case Some(node) => // We can restart the generation from another node
-            nodesPositions += node
-            lastNode = node
-            i += 1
-            translateIndex = 0
-          case None => return nodesPositions.toArray // The map is full. We cannot add another node
-        }
+        shiftIndex = 0
+      } else if (shiftIndex + 1 < shift.length) { // We need to try another shift
+        shiftIndex += 1
+      } else { // We tried all the shifts. The last node is blocked by other nodes.
+        val node = unblock()
+        require(
+          node.isDefined,
+          s"You asked to generate $n nodes. But we can put at most $i points in the current window."
+        )
+        nodesPositions += node.get
+        lastNode = node.get
+        i += 1
+        shiftIndex = 0
       }
     }
+
     nodesPositions.toArray
   }
 

@@ -8,7 +8,8 @@ import oscar.cbls.modeling.{Invariants => Inv, Neighborhoods => Nrs}
 import oscar.cbls.algo.generator.WarehouseLocationGenerator
 import oscar.cbls.lib.neighborhoods.combinator.distributed.DistributedModulo
 import oscar.cbls.lib.neighborhoods.combinator.distributed.DistributedModulo.ModuloRange
-import oscar.cbls.util.ArgParser
+
+import scala.concurrent.duration.DurationInt
 
 /** Problem statement for the Warehouse Location Problem.
   * Sent by the supervisor to worker nodes so they can build their local models.
@@ -86,25 +87,32 @@ case class WLPProblemStatement(
  * Supervisor node for distributed WLP optimization.
  * Run this first, then start worker nodes.
  *
- * The supervisor generates the problem data and sends it to worker nodes
- * via the WLPProblemStatement message.
+ * The supervisor generates the problem data from its constructor parameters and sends it to
+ * worker nodes via the WLPProblemStatement message.
  *
- * Command line arguments:
- *   -h <host>         Supervisor host (default: 127.0.0.1)
- *   -p <port>         Supervisor port (default: 2551)
- *   -w <localWorkers> Number of local workers (default: 2)
- *   -d <delay>        Time in seconds to wait for remote workers (default: 10)
+ * @param nbFacilities
+ *   the number of facilities (warehouses) that can be opened
+ * @param deliveryPoints
+ *   the number of delivery points to serve
+ * @param nbParal
+ *   the number of parallel neighborhoods to create
+ * @param seed
+ *   random seed used to generate the problem data (for reproducibility)
  */
-object WLPSupervisorNode {
-
-  // Problem parameters
-  val nbFacilities   = 300
-  val deliveryPoints = 1000
-  private val nbParal        = 10
+class WLPSupervisorNode(
+                         val nbFacilities: Int,
+                         val deliveryPoints: Int,
+                         val nbParal: Int,
+                         val seed: Int
+                       ) {
 
   // Generate problem data (seed for reproducibility)
   val (fixedCosts, warehousesPositions, deliveryPositions, distanceMatrix, _) =
-    WarehouseLocationGenerator.generateRandomWLP(nbFacilities, deliveryPoints, seed = 42L)
+    WarehouseLocationGenerator.generateRandomWLP(
+      nbFacilities,
+      deliveryPoints,
+      seed = Some(seed.toLong)
+    )
 
   // Create the problem statement to be sent to worker nodes
   val problemStatement: WLPProblemStatement = WLPProblemStatement(
@@ -115,17 +123,33 @@ object WLPSupervisorNode {
     nbParal
   )
 
-  def main(args: Array[String]): Unit = {
-    val parsedArgs = ArgParser.parse(args)
-
-    val supervisorHost = parsedArgs.getOrElse("-h", "127.0.0.1")
-    val supervisorPort = parsedArgs.get("-p").map(_.toInt).getOrElse(2551)
-    val localWorkers = parsedArgs.get("-w").map(_.toInt).getOrElse(2)
-    val delay = parsedArgs.get("-d").map(_.toInt).getOrElse(10)
-
+  /** Starts the supervisor and runs the distributed optimization until completion.
+    *
+    * @param supervisorHost
+    *   the host (IP address) the supervisor listens on
+    * @param supervisorPort
+    *   the port the supervisor listens on
+    * @param localWorkers
+    *   the number of workers spawned inside the supervisor's own JVM
+    * @param nbWorkersToWaitFor
+    *   the number of registered workers, local and remote ones alike, that must be there before
+    *   the search starts
+    * @param maxWaitInSeconds
+    *   the maximal time in seconds to wait for these workers; after that the search starts with
+    *   whatever workers did register
+    */
+  def run(
+    supervisorHost: String,
+    supervisorPort: Int,
+    localWorkers: Int,
+    nbWorkersToWaitFor: Int,
+    maxWaitInSeconds: Int
+  ): Unit = {
     println(s"Starting WLP Supervisor on $supervisorHost:$supervisorPort")
+    println(s"Problem: facilities=$nbFacilities, deliveryPoints=$deliveryPoints, " +
+      s"nbParal=$nbParal, seed=$seed")
     println(s"Local workers: $localWorkers")
-    println(s"Delay for remote workers: ${delay}s")
+    println(s"Waiting for $nbWorkersToWaitFor workers, at most ${maxWaitInSeconds}s")
 
     // Create supervisor's model and search using the problem statement
     val (store, obj, searches) = problemStatement.buildLocalSearchModel()
@@ -143,7 +167,6 @@ object WLPSupervisorNode {
     )
 
     println(s"Supervisor address: ${distributedSearch.supervisorAddress}")
-    println("Waiting for workers to connect...")
 
     // Optionally spawn local workers
     for (_ <- 0 until localWorkers) {
@@ -151,8 +174,19 @@ object WLPSupervisorNode {
       distributedSearch.spawnLocalWorker(workerStore, workerSearches.head)
     }
 
-    // Wait for remote workers to connect
-    Thread.sleep(delay * 1000L)
+    // Wait for the workers to register to the supervisor, rather than sleeping and hoping that
+    // the remote ones showed up in the meantime.
+    println("Waiting for workers to connect...")
+    val nbConnectedWorkers =
+      distributedSearch.waitForWorkers(nbWorkersToWaitFor, maxWaitInSeconds.seconds)
+    if (nbConnectedWorkers < nbWorkersToWaitFor) {
+      println(
+        s"Only $nbConnectedWorkers workers out of $nbWorkersToWaitFor registered within " +
+          s"${maxWaitInSeconds}s; starting the search anyway"
+      )
+    } else {
+      println(s"$nbConnectedWorkers workers registered")
+    }
 
     // Run optimization
     println("Starting optimization...")
@@ -167,30 +201,70 @@ object WLPSupervisorNode {
 }
 
 /**
+ * Standalone entry point running [[WLPSupervisorNode]] with the default problem instance.
+ * Use [[MultiJVMExampleRunner]] to choose the problem parameters from command line.
+ *
+ * Run it with `--help` to get the list of the supported options; see [[SupervisorNodeArgs]].
+ */
+object WLPSupervisorNode {
+
+  // Default problem parameters
+  val defaultNbFacilities: Int   = 300
+  val defaultDeliveryPoints: Int = 1000
+  val defaultNbParal: Int        = 10
+  val defaultSeed: Int           = 42
+
+  def main(args: Array[String]): Unit = {
+    SupervisorNodeArgs.parse("WLPSupervisorNode", args) match {
+      case None => CliExit.onParseFailure(args)
+      case Some(parsedArgs) =>
+        new WLPSupervisorNode(
+          defaultNbFacilities,
+          defaultDeliveryPoints,
+          defaultNbParal,
+          defaultSeed
+        ).run(
+          supervisorHost = parsedArgs.supervisorHost,
+          supervisorPort = parsedArgs.supervisorPort,
+          localWorkers = parsedArgs.localWorkers,
+          nbWorkersToWaitFor = parsedArgs.nbWorkersToWaitFor,
+          maxWaitInSeconds = parsedArgs.delay
+        )
+    }
+  }
+}
+
+/**
  * Worker node for distributed WLP optimization.
  * Connect to a running supervisor.
  *
  * Each worker receives problem data from the supervisor via WLPProblemStatement
  * and creates its local model and search from that data using buildLocalSearchModel().
  *
- * Command line arguments:
- *   -h <workerHost>     Worker host (default: 127.0.0.1)
- *   -s <supervisorHost> Supervisor host (default: 127.0.0.1)
- *   -p <supervisorPort> Supervisor port (default: 2551)
- *   -w <nbWorkers>      Number of workers (default: availableProcessors / 4)
+ * Run it with `--help` to get the list of the supported options; see [[WorkerNodeArgs]].
  */
 object WLPWorkerNode {
 
-  def main(args: Array[String]): Unit = {
-    val parsedArgs = ArgParser.parse(args)
+  /** Default number of workers spawned in this JVM. */
+  def defaultNbWorkers: Int = Runtime.getRuntime.availableProcessors() / 4
 
-    val workerHost = parsedArgs.getOrElse("-h", "127.0.0.1")
-    val supervisorHost = parsedArgs.getOrElse("-s", "127.0.0.1")
-    val supervisorPort = parsedArgs.get("-p").map(_.toInt).getOrElse(2551)
-    val nbWorkers = parsedArgs.get("-w").map(_.toInt).getOrElse(
-      Runtime.getRuntime.availableProcessors() / 4
-    )
-
+  /** Starts the worker node and blocks until the supervisor shuts it down.
+    *
+    * @param workerHost
+    *   the host (IP address) this worker node listens on
+    * @param supervisorHost
+    *   the host (IP address) of the supervisor to connect to
+    * @param supervisorPort
+    *   the port of the supervisor to connect to
+    * @param nbWorkers
+    *   the number of workers to spawn in this JVM
+    */
+  def run(
+    workerHost: String,
+    supervisorHost: String,
+    supervisorPort: Int,
+    nbWorkers: Int
+  ): Unit = {
     println(s"Starting $nbWorkers workers on $workerHost, connecting to $supervisorHost:$supervisorPort")
 
     // Worker node that receives the problem statement and uses buildLocalSearchModel()
@@ -204,5 +278,18 @@ object WLPWorkerNode {
 
     println("Workers started. Waiting for problem data from supervisor...")
     workerNode.awaitTermination()
+  }
+
+  def main(args: Array[String]): Unit = {
+    WorkerNodeArgs.parse("WLPWorkerNode", args, defaultNbWorkers) match {
+      case None => CliExit.onParseFailure(args)
+      case Some(parsedArgs) =>
+        run(
+          parsedArgs.workerHost,
+          parsedArgs.supervisorHost,
+          parsedArgs.supervisorPort,
+          parsedArgs.nbWorkers
+        )
+    }
   }
 }

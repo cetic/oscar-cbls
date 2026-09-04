@@ -37,7 +37,7 @@ object RouteLength {
     *   A function that, given two nodes, returns the distance between the two nodes.
     */
   def apply(vrs: VRS, distanceFunction: Int => Int => Long): RouteLength = {
-    val output: Array[IntVariable] = Array.fill(vrs.n)(IntVariable(vrs.store, 0L))
+    val output: Array[IntVariable] = Array.fill(vrs.v)(IntVariable(vrs.store, 0L))
     new RouteLength(vrs, output, distanceFunction, Some("RouteLength"))
   }
 

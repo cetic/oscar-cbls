@@ -57,10 +57,24 @@ case class LoadSolutionMove(
   }
 }
 
+/** A [[StoreIndependentMove]] that carries a full solution computed by a worker.
+  *
+  * @param solution
+  *   the solution reached by the worker
+  * @param objAfter
+  *   the value of the objective that drove the exploration on the worker
+  * @param neighborhoodName
+  *   the name of the neighborhood that found this solution
+  * @param measuredObjAfter
+  *   the value of the optional second objective that the worker was asked to measure on this
+  *   solution (see [[oscar.cbls.core.distributed.computation.DoAllMoves]]). It did not drive the
+  *   exploration.
+  */
 case class StoreIndependentLoadSolutionMove(
   solution: StoreIndependentSolution,
   override val objAfter: Long,
-  neighborhoodName: String
+  neighborhoodName: String,
+  measuredObjAfter: Option[Long] = None
 ) extends StoreIndependentMove(objAfter) {
   override def attachMoveToStore(searchConnector: SearchConnector): Move =
     LoadSolutionMove(

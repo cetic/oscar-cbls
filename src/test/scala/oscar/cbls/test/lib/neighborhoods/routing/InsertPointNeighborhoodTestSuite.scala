@@ -38,7 +38,7 @@ class InsertPointNeighborhoodTestSuite extends AnyFunSuite {
     val model = new Store(debugLevel = 3)
     val vrs   = VRS(model, n, v, debug = true)
     val (_, dist, unroutedCost, _) =
-      RoutingGenerator.generateRandomRoutingData(n, 0L, 0L, seed)
+      RoutingGenerator.generateRandomRoutingData(n, 0L, 0L, Some(seed))
     val sumDist   = IntVariable(model, 0L)
     val sumCost   = IntVariable(model, 0L)
     val objVal    = IntVariable(model, 0L)

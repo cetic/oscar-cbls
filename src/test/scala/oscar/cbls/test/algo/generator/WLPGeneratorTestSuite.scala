@@ -24,9 +24,9 @@ class WLPGeneratorTestSuite extends AnyFunSuite with Matchers {
 
   test("Two generators with the same seed generate the same data") {
     val (open1, wp1, dp1, cd1, wd1) =
-      WarehouseLocationGenerator.generateRandomWLP(5, 20, seed = 42L)
+      WarehouseLocationGenerator.generateRandomWLP(5, 20, seed = Some(42L))
     val (open2, wp2, dp2, cd2, wd2) =
-      WarehouseLocationGenerator.generateRandomWLP(5, 20, seed = 42L)
+      WarehouseLocationGenerator.generateRandomWLP(5, 20, seed = Some(42L))
 
     open1 should equal(open2)
     wp1 should equal(wp2)

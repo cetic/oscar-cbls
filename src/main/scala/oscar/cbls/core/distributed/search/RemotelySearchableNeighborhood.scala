@@ -47,9 +47,14 @@ case class RemotelySearchableNeighborhood(n: Neighborhood) extends RemotelyCalla
   ): ActualResult = {
 
     description match {
-      case DoAllMoves(startSolution, objective, sendProgressToOPt) =>
+      case DoAllMoves(startSolution, objective, sendProgressToOPt, objectiveToMeasureOpt) =>
         computationSupport.attachSolutionToStore(startSolution).restoreSolution()
-        val attachedObjective = computationSupport.attachObjectiveToStore(objective)
+        // The search procedure has already decided which objective must drive the exploration,
+        // so it is used as is. The optional second objective is only measured on the solution
+        // that is reached, it never influences the exploration.
+        val searchObjective = computationSupport.attachObjectiveToStore(objective)
+        val objectiveToMeasure =
+          objectiveToMeasureOpt.map(computationSupport.attachObjectiveToStore)
 
         n.reset()
         val startTimeMs = System.currentTimeMillis()
@@ -62,14 +67,14 @@ case class RemotelySearchableNeighborhood(n: Neighborhood) extends RemotelyCalla
               _: Int => {
                 listener ! ProgressReport(
                   taskId = taskId,
-                  obj = attachedObjective.objValue.value(),
+                  obj = searchObjective.objValue.value(),
                   runTimeMs = System.currentTimeMillis() - startTimeMs
                 )
                 false
               }
           }
 
-        val nbMoves = n.doAllMoves(attachedObjective, shouldStop)
+        val nbMoves = n.doAllMoves(searchObjective, shouldStop)
 
         if (nbMoves == 0) {
           TaskResultNoMoveFound
@@ -77,8 +82,9 @@ case class RemotelySearchableNeighborhood(n: Neighborhood) extends RemotelyCalla
           TaskResultMove(
             StoreIndependentLoadSolutionMove(
               computationSupport.saveDetachedSolution,
-              attachedObjective.objValue.value(),
-              "remote"
+              searchObjective.objValue.value(),
+              "remote",
+              objectiveToMeasure.map(_.objValue.value())
             )
           )
         }

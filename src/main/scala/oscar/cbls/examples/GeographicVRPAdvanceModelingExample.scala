@@ -1,5 +1,4 @@
 package oscar.cbls.examples
-
 // Imports to model a problem and a search procedure
 import oscar.cbls._
 import oscar.cbls.modeling.{Invariants => Inv, Neighborhoods => Nrs}
@@ -8,18 +7,26 @@ import oscar.cbls.modeling.{Invariants => Inv, Neighborhoods => Nrs}
 import oscar.cbls.algo.generator.RoutingGenerator
 
 // GUI
-import oscar.cbls.visual.cartesian.routing.CartesianRoutingDisplay
+import oscar.cbls.visual.geographic.GeographicalRoutingDisplay
 
-object VRPAdvancedModelingExample {
+object GeographicVRPAdvanceModelingExample {
   def main(args: Array[String]): Unit = {
     // Model definition
     implicit val m: Model = model("VRP example")
 
     // Generating random data
-    val nbNodes    = 100
-    val nbVehicles = 5
+    val nbNodes    = 1000
+    val nbVehicles = 10
     val (nodesCoordinate, distanceMatrix, unroutedPenalty, _) =
-      RoutingGenerator.generateRandomRoutingData(nbNodes, 2, 0)
+      RoutingGenerator.generateGeographicRoutingData(
+        nbNodes,
+        2,
+        0,
+        minLatitude = 49.497,
+        maxLatitude = 51.505,
+        minLongitude = 2.546,
+        maxLongitude = 6.408
+      )
 
     // Sets up the VRS structure
     implicit val vrs: VRS = m.vrs(nbNodes, nbVehicles)
@@ -61,15 +68,8 @@ object VRPAdvancedModelingExample {
     // Defining the search procedure using combinators
     val search: Neighborhood = Nrs.combinator.bestSlopeFirst(List(n1, n2, n3, n4))
 
-    // Try population-based search
-//    val pbs = Nrs.combinator.populationBasedSearch((it, _) =>
-//      if (it < 10) Some((List(n1, n2, n3, n4), 4))
-//      else None
-//    )
-
     // Initialization of the problem resolution display
-    val visu =
-      CartesianRoutingDisplay(obj.objValue, vrs, nodesCoordinate, width = 800, height = 800)
+    val visu = GeographicalRoutingDisplay(vrs, nodesCoordinate)
     // Defining a search procedure with visualization
     val searchWithVisu = Nrs.combinator.updateDisplay(search, visu)
 
@@ -86,5 +86,7 @@ object VRPAdvancedModelingExample {
 
     // Keeps the window alive until the user closes it
     visu.waitForClosing()
+
   }
+
 }

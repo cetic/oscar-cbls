@@ -4,6 +4,8 @@ import org.apache.pekko.actor.typed.{ActorRef, Behavior}
 import oscar.cbls.core.distributed.computation.{SearchConnector, Task, TaskResult}
 import oscar.cbls.core.distributed.search.TestBehavior
 
+import scala.concurrent.duration.FiniteDuration
+
 /** The messages that the Supervisor accepts.
   */
 sealed abstract class MessageToSupervisor
@@ -24,6 +26,47 @@ final case class WorkerNodeRegister(
   * workers.
   */
 case object GlobalShutDown extends MessageToSupervisor
+
+/** Asks the supervisor to notify `answerTo` as soon as at least `nbWorkers` workers are registered.
+  *
+  * The supervisor answers immediately when enough workers are already registered. Otherwise it
+  * keeps the request pending and answers as soon as the condition is met, or after `timeout` has
+  * elapsed, whichever comes first. In both cases the answer reports the number of workers that are
+  * actually registered, so that the caller can decide whether it is worth starting the search.
+  *
+  * This is the proper way of waiting for remote worker nodes to join before starting a search; it
+  * replaces the "sleep long enough and hope for the best" approach.
+  *
+  * @param nbWorkers
+  *   the number of registered workers to wait for
+  * @param timeout
+  *   the maximal amount of time to wait before answering anyway
+  * @param answerTo
+  *   the actor to which the [[WorkersAvailable]] answer must be sent
+  */
+final case class WaitForWorkers(
+  nbWorkers: Int,
+  timeout: FiniteDuration,
+  answerTo: ActorRef[WorkersAvailable]
+) extends MessageToSupervisor
+
+/** The answer to a [[WaitForWorkers]] request.
+  *
+  * @param nbWorkers
+  *   the number of workers registered to the supervisor when the answer was sent
+  * @param enoughWorkers
+  *   true when the number of workers requested by [[WaitForWorkers]] was reached, false when the
+  *   answer was triggered by the timeout
+  */
+final case class WorkersAvailable(nbWorkers: Int, enoughWorkers: Boolean)
+
+/** An internal message that the supervisor sends to itself to close a pending [[WaitForWorkers]]
+  * request that took too long.
+  *
+  * @param waiterId
+  *   the identifier of the pending request
+  */
+private[distributed] final case class WorkerWaitTimeout(waiterId: Long) extends MessageToSupervisor
 
 /** A message send by the Cluster to notify that a worker has been disconnected, e.g. because of
   * internet connexion lost or to OS-level crash. This will not stop the computation since it is not

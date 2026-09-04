@@ -56,7 +56,7 @@ object WarehouseLocationGenerator {
     numWarehouses: Int,
     numDelivery: Int,
     weightFactorForOpeningWarehouseCost: Long = 3L,
-    seed: Long = Random.nextLong()
+    seed: Option[Long] = None
   ): (
     Array[Long],
     Array[(Long, Long)],
@@ -64,7 +64,7 @@ object WarehouseLocationGenerator {
     Array[Array[Long]],
     Array[Array[Long]]
   ) = {
-    val rng = new Random(seed)
+    val rng = seed.map(new Random(_)).getOrElse(new Random())
     val openingCosts =
       costsForOpeningWarehouse(numWarehouses, weightFactorForOpeningWarehouseCost, rng)
     val warehouses = randomPositions(numWarehouses, rng)
@@ -100,7 +100,7 @@ object WarehouseLocationGenerator {
     numDelivery: Int,
     weightFactorForOpeningWarehouseCost: Long = 3L,
     numTilesOnSide: Long = 2L,
-    seed: Long = Random.nextLong()
+    seed: Option[Long] = None
   ): (
     Array[Long],
     Array[(Long, Long)],
@@ -108,7 +108,7 @@ object WarehouseLocationGenerator {
     Array[Array[Long]],
     Array[Array[Long]]
   ) = {
-    val rng = new Random(seed)
+    val rng = seed.map(new Random(_)).getOrElse(new Random())
     val openingCosts =
       costsForOpeningWarehouse(numWarehouses, weightFactorForOpeningWarehouseCost, rng)
     val warehouses = gridWarehousesPositions(numWarehouses, numTilesOnSide, rng)
@@ -146,7 +146,7 @@ object WarehouseLocationGenerator {
     numDelivery: Int,
     minDistanceBetweenWarehouses: Long,
     weightFactorForOpeningWarehouseCost: Long = 3L,
-    seed: Long = Random.nextLong()
+    seed: Option[Long] = None
   ): (
     Array[Long],
     Array[(Long, Long)],
@@ -154,7 +154,7 @@ object WarehouseLocationGenerator {
     Array[Array[Long]],
     Array[Array[Long]]
   ) = {
-    val rng = new Random(seed)
+    val rng = seed.map(new Random(_)).getOrElse(new Random())
     val openingCosts =
       costsForOpeningWarehouse(numWarehouses, weightFactorForOpeningWarehouseCost, rng)
     val warehouses = minDistWarehouses(numWarehouses, minDistanceBetweenWarehouses, rng)

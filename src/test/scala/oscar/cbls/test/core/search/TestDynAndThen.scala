@@ -335,7 +335,7 @@ class TestDynAndThen extends AnyFunSuite with Matchers {
     val nbNodes    = 100
     val nbVehicles = 1
     val (_, distanceMatrix, unroutedPenalty, _) =
-      RoutingGenerator.generateRandomRoutingData(nbNodes, 2, 0, seed = 42)
+      RoutingGenerator.generateRandomRoutingData(nbNodes, 2, 0, seed = Some(42))
 
     val model  = new Store()
     val vrs    = VRS(model, nbNodes, nbVehicles, debug = true)

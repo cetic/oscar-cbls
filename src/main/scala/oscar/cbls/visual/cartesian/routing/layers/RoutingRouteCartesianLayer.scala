@@ -16,11 +16,11 @@ package oscar.cbls.visual.cartesian.routing.layers
 import oscar.cbls.core.computation.Solution
 import oscar.cbls.core.computation.seq.SeqVariable
 import oscar.cbls.visual.cartesian.{CartesianLayer, CartesianNode}
-import oscar.cbls.visual.generator.ColorGenerator
+import oscar.cbls.visual.generator.{ArrowGenerator, ColorGenerator}
 import scalafx.application.Platform
 import scalafx.beans.property.ObjectProperty
 import scalafx.scene.paint.Color
-import scalafx.scene.shape.{Polyline, Shape}
+import scalafx.scene.shape.{Line, Polygon, Shape}
 
 object RoutingRouteCartesianLayer {
 
@@ -57,23 +57,15 @@ class RoutingRouteCartesianLayer(
   routesAsVariable: SeqVariable
 ) extends CartesianLayer {
 
-  private val colors: Array[Color]    = ColorGenerator.generateRandomColors(nbVehicles)
-  private var routes: Array[Polyline] = Array.empty
+  // Radius, in pixels, of a node's circle icon (see RoutingNodeCartesianLayer). Arrowheads stop
+  // short of the destination node by this amount so the tip touches the circle's boundary.
+  private final val NODE_RADIUS: Double = 4.0
+
+  private val colors: Array[Color] = ColorGenerator.generateContrastingColors(nbVehicles)
   private val routesSequence: ObjectProperty[List[Int]] = ObjectProperty[List[Int]](List.empty)
 
   routesSequence.onChange {
     Platform.runLater(drawRoutes())
-  }
-
-  private def generateRoutes(): Unit = {
-    routes = Array.tabulate(nbVehicles)(v => {
-      val route = new Polyline()
-      route.setStroke(colors(v))
-      route.setFill(Color.Transparent)
-      route.setStrokeWidth(2)
-      listOfShapes = listOfShapes :+ route
-      route
-    })
   }
 
   override private[cartesian] var listOfShapes: List[Shape] = List.empty
@@ -86,25 +78,50 @@ class RoutingRouteCartesianLayer(
 
   private def drawRoutes(): Unit = {
     if (routesSequence.value.nonEmpty) {
-      routes.foreach(_.getPoints.clear())
+      var shapes: List[Shape] = List.empty
+
+      // Draws the directed edge of vehicle vehicleId's route from node fromId to node toId, as a
+      // Line shaft plus a triangular arrowhead Polygon. Skipped when fromId == toId, which happens
+      // when a vehicle's route is empty (its depot's closing edge would otherwise loop on itself).
+      def drawEdge(vehicleId: Int, fromId: Int, toId: Int): Unit = {
+        if (fromId != toId) {
+          val (x1, y1) = nodesCoordinates(fromId).resizedCoordinates
+          val (x2, y2) = nodesCoordinates(toId).resizedCoordinates
+          val arrow    = ArrowGenerator.computeArrow(x1, y1, x2, y2, NODE_RADIUS)
+
+          val shaft = new Line {
+            startX = x1
+            startY = y1
+            endX = arrow.shaftEndX
+            endY = arrow.shaftEndY
+            stroke = colors(vehicleId)
+            strokeWidth = 2
+          }
+          val arrowhead = new Polygon {
+            fill = colors(vehicleId)
+          }
+          arrowhead.points.addAll(arrow.headPoints.map(d => Double.box(d)): _*)
+
+          shapes = shapes :+ shaft :+ arrowhead
+        }
+      }
+
       var currentVehicleId = -1
+      var previousPointId  = -1
       for { pointId <- routesSequence.value } {
         if (pointId < nbVehicles) {
-          if (currentVehicleId >= 0) addPointToTravel(currentVehicleId, currentVehicleId)
+          if (currentVehicleId >= 0) drawEdge(currentVehicleId, previousPointId, currentVehicleId)
           currentVehicleId += 1
+        } else {
+          drawEdge(currentVehicleId, previousPointId, pointId)
         }
-        addPointToTravel(currentVehicleId, pointId)
+        previousPointId = pointId
       }
-      addPointToTravel(currentVehicleId, currentVehicleId)
+      drawEdge(currentVehicleId, previousPointId, currentVehicleId)
 
-      def addPointToTravel(vehicleId: Int, pointId: Int): Unit = {
-        val coordinate = nodesCoordinates(pointId).resizedCoordinates
-        routes(vehicleId).getPoints.addAll(coordinate._1, coordinate._2)
-      }
+      listOfShapes = shapes
     }
   }
 
-  override def initLayer(): Unit = {
-    generateRoutes()
-  }
+  override def initLayer(): Unit = {}
 }
