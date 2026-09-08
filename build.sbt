@@ -1,6 +1,18 @@
-ThisBuild / scalaVersion  := "2.13.17"
-ThisBuild / organization  := "be.cetic"
-ThisBuild / version       := sys.props.getOrElse("version", "latest")
+ThisBuild / scalaVersion := "2.13.17"
+ThisBuild / organization := "be.cetic"
+ThisBuild / version := {
+  sys.props.get("version") match {
+    case Some(v) =>
+      // If version name is defined as an environment variable (namely during gitlab ci)
+      v
+    case None if sys.env.contains("SONATYPE_USERNAME") =>
+      // If version is not defined as an environment variable, but we are pushing on sonatype (namely during github ci)
+      (ThisBuild / version).value
+    case None =>
+      // If none of is above is true (namely for local developments)
+      "latest"
+  }
+}
 ThisBuild / versionScheme := Some("early-semver")
 
 val pekkoVersion = "1.7.0"
@@ -10,17 +22,14 @@ ThisBuild / homepage := Some(url("https://github.com/cetic/oscar-cbls"))
 ThisBuild / licenses := List("LGPL-3.0" -> url("https://www.gnu.org/licenses/lgpl-3.0.en.html"))
 ThisBuild / developers := List(
   Developer(
-    id    = "cetic",
-    name  = "CETIC",
+    id = "cetic",
+    name = "CETIC",
     email = "info@cetic.be",
-    url   = url("https://www.cetic.be")
+    url = url("https://www.cetic.be")
   )
 )
 ThisBuild / scmInfo := Some(
-  ScmInfo(
-    url("https://github.com/cetic/oscar-cbls"),
-    "scm:git@github.com:cetic/oscar-cbls.git"
-  )
+  ScmInfo(url("https://github.com/cetic/oscar-cbls"), "scm:git@github.com:cetic/oscar-cbls.git")
 )
 ThisBuild / sonatypeCredentialHost := "central.sonatype.com"
 
@@ -48,8 +57,8 @@ lazy val oscarCbls = (project in file("."))
   .settings(
     libraryDependencies ++= Seq(
       // GUI dependencies
-      "com.gluonhq"        % "maps"            % "2.0.0-ea+6",
-      "org.scalafx"       %% "scalafx"         % "22.0.0-R33",
+      "com.gluonhq"  % "maps"    % "2.0.0-ea+6",
+      "org.scalafx" %% "scalafx" % "22.0.0-R33",
       // Test dependencies
       "junit"              % "junit"           % "4.13.2"  % Test,
       "org.scalacheck"    %% "scalacheck"      % "1.19.0",
@@ -68,7 +77,7 @@ lazy val oscarCbls = (project in file("."))
       // Kryo Serialization - High performance binary serialization
       "io.altoo" %% "pekko-kryo-serialization" % "1.5.2",
       // Test toolkits
-      "org.apache.pekko" %% "pekko-multi-node-testkit" % pekkoVersion % Test,
+      "org.apache.pekko" %% "pekko-multi-node-testkit"  % pekkoVersion % Test,
       "org.apache.pekko" %% "pekko-actor-testkit-typed" % pekkoVersion % Test,
       // Logging
       "org.slf4j" % "slf4j-simple" % "2.0.18",
@@ -85,7 +94,7 @@ lazy val oscarCbls = (project in file("."))
     // left untouched. Run it with:
     //   java -jar target/scala-2.13/oscar-cbls-examples-<version>.jar --help
     ///////////////////////////////////////////////////////////////////////////
-    assembly / mainClass := Some("oscar.cbls.examples.MultiJVMExampleRunner"),
+    assembly / mainClass       := Some("oscar.cbls.examples.MultiJVMExampleRunner"),
     assembly / assemblyJarName := s"oscar-cbls-examples-${version.value}.jar",
     assembly / assemblyMergeStrategy := {
       // Pekko splits its configuration across one reference.conf per module: they must all be
@@ -99,9 +108,8 @@ lazy val oscarCbls = (project in file("."))
       // become invalid once their content is merged.
       case PathList(ps @ _*) if ps.last == "module-info.class" => MergeStrategy.discard
       case PathList("META-INF", ps @ _*)
-          if ps.lastOption.exists(p =>
-            p.endsWith(".SF") || p.endsWith(".DSA") || p.endsWith(".RSA")
-          ) =>
+          if ps.lastOption
+            .exists(p => p.endsWith(".SF") || p.endsWith(".DSA") || p.endsWith(".RSA")) =>
         MergeStrategy.discard
       case PathList("META-INF", _*) => MergeStrategy.discard
       // Several dependencies ship the same helper classes/resources; keeping the first one is
@@ -127,11 +135,11 @@ publishTo := Def.taskIf {
   val isPublishingToSonatype = sys.env.contains("SONATYPE_USERNAME")
 
   if (isPublishingToSonatype) {
-    publishTo.value 
+    publishTo.value
   } else {
-    val nexus = "https://nexus.cetic.be/"
-    val privateRepo  = "repository/oscar"
-    val publicRepo = "repository/oscar-public"
+    val nexus       = "https://nexus.cetic.be/"
+    val privateRepo = "repository/oscar"
+    val publicRepo  = "repository/oscar-public"
 
     val isTag = sys.env.contains("CI_COMMIT_TAG")
 
@@ -146,4 +154,3 @@ ThisBuild / credentials += Credentials(
   sys.env.getOrElse("NEXUS_USER", ""),
   sys.env.getOrElse("NEXUS_PASS", "")
 )
-
