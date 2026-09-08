@@ -1,8 +1,9 @@
 ThisBuild / scalaVersion  := "2.13.17"
 ThisBuild / organization  := "be.cetic"
+ThisBuild / version       := sys.props.getOrElse("version", "latest")
 ThisBuild / versionScheme := Some("early-semver")
 
-val pekkoVersion = "1.4.0"
+val pekkoVersion = "1.7.0"
 
 // Maven central metadata
 ThisBuild / homepage := Some(url("https://github.com/cetic/oscar-cbls"))
@@ -26,7 +27,6 @@ ThisBuild / sonatypeCredentialHost := "central.sonatype.com"
 lazy val oscarCbls = (project in file("."))
   .enablePlugins(PackPlugin)
   .settings(
-    name := "oscar-cbls",
     licenses += ("LGPL-3.0", url("https://www.gnu.org/licenses/lgpl-3.0.en.html")),
     // Auto map external jar when possible
     Compile / doc / autoAPIMappings := true,
@@ -41,6 +41,7 @@ lazy val oscarCbls = (project in file("."))
       "-opt:l:inline",
       "-opt-inline-from:oscar.**"
     ) ++ (if (!OscarBuildParameters.enableAssertions) Seq("-Xdisable-assertions") else Seq.empty),
+    name := "oscar-cbls"
   )
   .settings(PackPlugin.packSettings)
   .settings(packGenerateWindowsBatFile := false)
@@ -52,7 +53,7 @@ lazy val oscarCbls = (project in file("."))
       // Test dependencies
       "junit"              % "junit"           % "4.13.2"  % Test,
       "org.scalacheck"    %% "scalacheck"      % "1.19.0",
-      "org.scalatest"     %% "scalatest"       % "3.2.19",
+      "org.scalatest"     %% "scalatest"       % "3.2.20",
       "org.scalatestplus" %% "scalacheck-1-14" % "3.2.2.0" % Test,
       // Scala parallel collections
       "org.scala-lang.modules" %% "scala-parallel-collections" % "1.2.0",
@@ -65,13 +66,48 @@ lazy val oscarCbls = (project in file("."))
       // Pekko Serialization Jackson (keep for compatibility)
       "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
       // Kryo Serialization - High performance binary serialization
-      "io.altoo" %% "pekko-kryo-serialization" % "1.3.2",
+      "io.altoo" %% "pekko-kryo-serialization" % "1.5.2",
       // Test toolkits
       "org.apache.pekko" %% "pekko-multi-node-testkit" % pekkoVersion % Test,
       "org.apache.pekko" %% "pekko-actor-testkit-typed" % pekkoVersion % Test,
       // Logging
-      "org.slf4j" % "slf4j-simple" % "2.0.17"
+      "org.slf4j" % "slf4j-simple" % "2.0.18",
+      // Command line parsing, used by the runnable examples
+      "com.github.scopt" %% "scopt" % "4.1.0"
     )
+  )
+  .settings(
+    ///////////////////////////////////////////////////////////////////////////
+    // Standalone "fat jar" of the multi-JVM examples.
+    //
+    // Built on demand with `sbt assembly`; the resulting jar is NOT part of the
+    // artifacts produced by `package` / `publish`, so the library publication is
+    // left untouched. Run it with:
+    //   java -jar target/scala-2.13/oscar-cbls-examples-<version>.jar --help
+    ///////////////////////////////////////////////////////////////////////////
+    assembly / mainClass := Some("oscar.cbls.examples.MultiJVMExampleRunner"),
+    assembly / assemblyJarName := s"oscar-cbls-examples-${version.value}.jar",
+    assembly / assemblyMergeStrategy := {
+      // Pekko splits its configuration across one reference.conf per module: they must all be
+      // kept, otherwise the actor system fails to start from the fat jar.
+      case PathList(ps @ _*) if ps.last == "reference.conf"   => MergeStrategy.concat
+      case PathList(ps @ _*) if ps.last == "application.conf" => MergeStrategy.concat
+      case PathList(ps @ _*) if ps.last == "version.conf"     => MergeStrategy.concat
+      // Same for the ServiceLoader registrations.
+      case PathList("META-INF", "services", _*) => MergeStrategy.filterDistinctLines
+      // JPMS descriptors are meaningless in a fat jar, and signatures of the original jars
+      // become invalid once their content is merged.
+      case PathList(ps @ _*) if ps.last == "module-info.class" => MergeStrategy.discard
+      case PathList("META-INF", ps @ _*)
+          if ps.lastOption.exists(p =>
+            p.endsWith(".SF") || p.endsWith(".DSA") || p.endsWith(".RSA")
+          ) =>
+        MergeStrategy.discard
+      case PathList("META-INF", _*) => MergeStrategy.discard
+      // Several dependencies ship the same helper classes/resources; keeping the first one is
+      // enough here and avoids a deduplicate error on every new transitive dependency.
+      case _ => MergeStrategy.first
+    }
   )
 
 // Defines a new task activating assertion.
@@ -83,3 +119,31 @@ ThisBuild / activateAssertion := {
 }
 // Links the activateAssertion task to the task test.
 Test / test := ((Test / test) dependsOn activateAssertion).value
+
+////////////////////////////////////////
+// This part is used only for CETIC's internal CI/CD. The user can ignore it.
+
+publishTo := Def.taskIf {
+  val isPublishingToSonatype = sys.env.contains("SONATYPE_USERNAME")
+
+  if (isPublishingToSonatype) {
+    publishTo.value 
+  } else {
+    val nexus = "https://nexus.cetic.be/"
+    val privateRepo  = "repository/oscar"
+    val publicRepo = "repository/oscar-public"
+
+    val isTag = sys.env.contains("CI_COMMIT_TAG")
+
+    val repo = if (isTag) publicRepo else privateRepo
+    Some("Nexus" at nexus + repo)
+  }
+}.value
+
+ThisBuild / credentials += Credentials(
+  "Sonatype Nexus Repository Manager",
+  "nexus.cetic.be",
+  sys.env.getOrElse("NEXUS_USER", ""),
+  sys.env.getOrElse("NEXUS_PASS", "")
+)
+
